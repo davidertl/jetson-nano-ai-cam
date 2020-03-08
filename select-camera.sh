@@ -200,6 +200,13 @@ do
 		selected_height=1080
 	fi
 
+	if [[ $this_fps_string ==  *"60.000 fps"* ]]; then
+		#printf "yes\n"
+		framerate=60
+		selected_width=1920
+		selected_height=1080
+	fi
+
 	##skip test if 1920x1080 works
 	if [[ $selected_width == "0" ]]; then
 
