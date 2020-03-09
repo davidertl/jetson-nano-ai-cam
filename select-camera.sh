@@ -1,12 +1,19 @@
 #!/bin/bash
+
 declare -A VIDEO_CAMERA_INPUTS
 post_to_server=true;
 myIPAddress=$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p' | tr '\n' '|' )
 
+echo 255 | sudo tee /sys/devices/pwm-fan/target_pwm
 
 clear
-~/skip_sudo.sh
+printf "Usages \n"
+printf "./select-camera.sh loop :::: Auto detect resource and restart, log file: restart-log.log\n"
+printf "./select-camera.sh autorun :::: Auto start, without restart\n"
+printf "autorun defaults to /dev/video0\n\n"
 
+~/skip_sudo.sh
+sudo sh -c "echo -1 > /sys/module/usbcore/parameters/autosuspend"
 
 kill_darknet()
 {
@@ -24,6 +31,141 @@ kill_darknet()
 }
 
 
+kill_darknet_slient()
+{
+
+	##Actual check
+	darknet_pid=$(pgrep darknet)
+
+	if [ "$darknet_pid" != "" ]; then
+		sudo pgrep darknet | xargs sudo kill -9
+	fi
+
+}
+
+#function for looping and check memory usage and autokill and restart
+loop() {
+
+  # This is the loop.
+  now=`date +%s`
+
+  if [ -z $last ]; then
+    last=`date +%s`
+  fi
+
+  # Do everything you need the daemon to do.
+  # check if process exists
+
+  #if not, run again
+  #~/jetson-nano-ai-cam/select-camera.sh autorun
+  
+  # Check to see how long we actually need to sleep for. If we want this to run
+  # once a minute and it's taken more than a minute, then we should just run it
+  # anyway.
+
+
+
+  #alt for check mem usage
+  #pmap 22634 | tail -n 1 | awk '/[0-9]K/{print $2}'
+
+
+  autorun=true
+
+  last=`date +%s`
+
+
+
+  clear
+  ~/skip_sudo.sh
+  #echo "start loop"
+
+  ##Actual check
+  darknet_pid=$(pgrep darknet)
+  if [ "$darknet_pid" == "" ]; then
+    ##darknet not running, need to run again
+    echo "Darknet not found, restart $now" >> ~/jetson-nano-ai-cam/restart-log.log
+
+    ~/jetson-nano-ai-cam/select-camera.sh autorun
+    #exit 0  
+  fi
+
+  ##Set low power
+#  if [[ $( sudo nvpmodel -q | awk '/[0-9]+$/ {print $1}') == 0 ]]; then
+#     sudo nvpmodel -m 1
+#     printf "\nSet to 5W successfully\n"
+#  fi
+  
+
+  datetime=$(date '+%Y-%m-%d %H:%M:%S')
+
+  darknet_pid=$(pgrep darknet)
+
+  darknet_virt=$(cat /proc/$darknet_pid/stat | cut -d" " -f23)
+
+             #13836177408
+  if [ $darknet_virt -ge 13900000000  ]; then
+
+    echo "Consumed too much memory, restart!";
+
+    echo "Too much resource, restart $datetime" >> ~/jetson-nano-ai-cam/restart-log.log
+    
+    kill_darknet
+    printf "All darknet process killed\n";
+    sleep 3
+
+    ~/jetson-nano-ai-cam/select-camera.sh autorun
+
+    #exit 0
+  fi
+
+  loadavg_1m=$( cat /proc/loadavg | cut -d" " -f1)
+  acceptable_cpuload=5
+
+  if (( $(awk 'BEGIN {print ("'$loadavg_1m'" >= "'$acceptable_cpuload'")}') )); then
+
+    echo "Overloading system, restart!";
+    echo "Overload, restart $datetime" >> ~/jetson-nano-ai-cam/restart-log.log
+    
+    kill_darknet
+    printf "All darknet process killed\n";
+    sleep 3
+
+    ~/jetson-nano-ai-cam/select-camera.sh autorun
+
+    #exit 0  
+  fi
+
+  percentage_free_swap=$( free | grep Swap | awk '{ print $4/$2 }' )
+  acceptable_percentage_free_swap=0.5
+
+  if (( $(awk 'BEGIN {print ("'$percentage_free_swap'" <= "'$acceptable_percentage_free_swap'")}') )); then
+
+    echo "Too much swap, restart!";
+    echo "Swap overload, restart $datetime" >> ~/jetson-nano-ai-cam/restart-log.log
+    
+    kill_darknet
+    printf "All darknet process killed\n";
+    sleep 3
+
+    ~/jetson-nano-ai-cam/select-camera.sh autorun
+
+    #exit 0  
+  fi
+
+
+  # Set the sleep interval
+  if [[ ! $((now-last+runInterval+1)) -lt $((runInterval)) ]]; then
+    sleep $((now-last+runInterval))
+  fi
+
+  # Startover
+  echo "Darknet memused: $darknet_virt	System Load: $loadavg_1m	Percentage Free Swap: $percentage_free_swap";
+  echo "End Loop, sleep 2s";
+  sleep 2
+  loop
+}
+
+
 autorun=false;
 if [ "$1" == "autorun" ]; then
 	autorun=true
@@ -33,6 +175,12 @@ quit_darknet=false;
 if [ "$1" == "quit" ]; then
 	quit_darknet=true
 fi
+
+if [ "$1" == "loop" ]; then
+	loop
+	exit 0
+fi
+
 
 
 
@@ -86,10 +234,6 @@ video_camera_array=(/dev/video*)
 shopt -u nullglob # Turn off nullglob to make sure it doesn't interfere with anything later
 
 #sudo nvpmodel -q
-#sudo jetson_clocks --store
-#sudo jetson_clocks
-echo 255 | sudo tee /sys/devices/pwm-fan/target_pwm
-#sudo jetson_clocks --show
 
 
 if (( ${#video_camera_array[@]} == 0 )); then
@@ -192,7 +336,16 @@ do
 
 	#printf  "$this_fps_string"
 
+	#detect if 60fps is supported
+	if [[ $this_fps_string ==  *"60.000 fps"* ]]; then
+		#printf "yes\n"
+		framerate=60
+		selected_width=1920
+		selected_height=1080
+	fi
 
+
+	#if 30fps is supported, force it
 	if [[ $this_fps_string ==  *"30.000 fps"* ]]; then
 		#printf "yes\n"
 		framerate=30
@@ -200,12 +353,10 @@ do
 		selected_height=1080
 	fi
 
-	if [[ $this_fps_string ==  *"60.000 fps"* ]]; then
-		#printf "yes\n"
-		framerate=60
-		selected_width=1920
-		selected_height=1080
-	fi
+	#force 30fps
+	framerate=30
+
+
 
 	##skip test if 1920x1080 works
 	if [[ $selected_width == "0" ]]; then
@@ -308,6 +459,7 @@ do
 	printf "g. Reset ngrok\n"
 	printf "t. Send Test Notification\n"
 	printf "s. Show info\n"
+	printf "v. Show camera\n"
 	printf "r. Reboot\n"
 	printf "o. Shutdown\n"
 
@@ -492,6 +644,18 @@ do
 		;;
 
 
+		v)
+			printf "Doing: v4l2-ctl --device=$d -D --list-formats-ext \n"
+			clear
+
+			for d in /dev/video* ; do echo $d ; v4l2-ctl --device=$d -D --list-formats-ext  ; echo '===============' ; done
+
+			printf "Screen updated\n";
+			select_function=-1
+			continue
+		;;
+
+
 		n)
 			clear
 			sudo nmtui 
@@ -535,7 +699,9 @@ printf "Chosen: ${VIDEO_CAMERA_INPUTS[$camera_num,1]} ${VIDEO_CAMERA_INPUTS[$cam
 
 #darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg backup/samson-yolov3-tiny_final.weights "
 
-darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg ../../trained-weight/police2020/samson-yolov3-tiny_final.weights "
+#darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg ../../trained-weight/police2020/samson-yolov3-tiny_final.weights "
+
+darknet_police_str="./darknet detector demo ~/trained-weights/police/interference-samson-obj.data ~/trained-weights/police/interference-samson-yolov3-tiny.cfg ~/trained-weights/police/samson-yolov3-tiny_final.weights "
 
 darknet_coco_str="./darknet detector demo ./cfg/coco.data ./cfg/yolov3-tiny.cfg ./yolov3-tiny.weights "
 
@@ -721,9 +887,10 @@ do
 
 		3)
 			clear
-			cd ~/AlexeyAB/darknet
+			#cd ~/AlexeyAB/darknet
+			cd ~/modified-alexeyab-darknet
 
-			kill_darknet
+			kill_darknet_slient
 
 			#needto remove nvjpeg
 			#v4l2src_pipeline_str=${v4l2src_pipeline_str//nvjpegdec/jpegdec}
@@ -755,9 +922,10 @@ do
 
 		4)
 			clear
-			cd ~/AlexeyAB/darknet
+			#cd ~/AlexeyAB/darknet
+			cd ~/modified-alexeyab-darknet
 
-			kill_darknet
+			kill_darknet_slient
 
 			#needto remove nvjpeg
 			#v4l2src_pipeline_str=${v4l2src_pipeline_str//nvjpegdec/jpegdec}
@@ -796,7 +964,9 @@ EOF
 
 		5)
 			clear
-			cd ~/AlexeyAB/darknet
+			#cd ~/AlexeyAB/darknet
+			cd ~/modified-alexeyab-darknet
+
 
 			kill_darknet
 			
@@ -831,7 +1001,9 @@ EOF
 
 		6)
 			clear
-			cd ~/AlexeyAB/darknet
+			#cd ~/AlexeyAB/darknet
+			cd ~/modified-alexeyab-darknet
+
 
 			kill_darknet
 
@@ -904,91 +1076,11 @@ runInterval=5 # In seconds
 
 
 
-loop() {
-
-  # This is the loop.
-  now=`date +%s`
-
-  if [ -z $last ]; then
-    last=`date +%s`
-  fi
-
-  # Do everything you need the daemon to do.
-  # check if process exists
-
-  #if not, run again
-  #~/jetson-nano-ai-cam/select-camera.sh autorun
-  
-  # Check to see how long we actually need to sleep for. If we want this to run
-  # once a minute and it's taken more than a minute, then we should just run it
-  # anyway.
-  last=`date +%s`
-
-	clear
-	~/skip_sudo.sh
-	#echo "start loop"
-
-	##Actual check
-	darknet_pid=$(pgrep darknet)
-
-	if [ "$darknet_pid" == "" ]; then
-		##darknet not running, need to run again
-		echo "Darknet not found, restart $now" >> ~/jetson-nano-ai-cam/restart-log.log
-
-		~/jetson-nano-ai-cam/select-camera.sh autorun
-		exit 0	
-	fi
-
-	##Set low power
-	sudo nvpmodel -m 1
-	sudo sh -c "echo -1 > /sys/module/usbcore/parameters/autosuspend"
-	printf "\nSet to 5W successfully\n"
-
-	darknet_virt=$(cat /proc/$darknet_pid/stat | cut -d" " -f23)
-
-	if [ $darknet_virt -ge 14000000000  ]; then
-
-		echo "Consumed too much memory, restart!";
-
-		echo "Too much resource, restart $now" >> ~/jetson-nano-ai-cam/restart-log.log
-		
-		kill_darknet
-		printf "All darknet process killed\n";
-		sleep 3
-
-		~/jetson-nano-ai-cam/select-camera.sh autorun
-
-		exit 0
-	fi
-
-	loadavg_1m=$( cat /proc/loadavg | cut -d" " -f1)
-	acceptable_cpuload=4
-
-	if (( $(awk 'BEGIN {print ("'$loadavg_1m'" >= "'$acceptable_cpuload'")}') )); then
-
-		echo "Overloading system, restart!";
-		echo "Overload, restart $now" >> ~/jetson-nano-ai-cam/restart-log.log
-		
-		kill_darknet
-		printf "All darknet process killed\n";
-		sleep 3
-
-		~/jetson-nano-ai-cam/select-camera.sh autorun
-
-		exit 0	
-	fi
 
 
-  # Set the sleep interval
-  if [[ ! $((now-last+runInterval+1)) -lt $((runInterval)) ]]; then
-    sleep $((now-last+runInterval))
-  fi
 
-  # Startover
-  loop
-}
 
-nohup loop &>/dev/null &
+#nohup loop &>/dev/null &
 
 
 #eval $darknet_police_str
