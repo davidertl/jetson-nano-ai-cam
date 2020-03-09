@@ -7,8 +7,8 @@ clear
 ~/skip_sudo.sh
 
 
-snap install modem-manager
-snap install network-manager
+sudo snap install modem-manager
+sudo snap install network-manager
 
 
 ##Create WiFi Hotspot connection
