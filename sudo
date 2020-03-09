@@ -1,1 +1,0 @@
-255 tee /sys/devices/pwm-fan/target-fan
