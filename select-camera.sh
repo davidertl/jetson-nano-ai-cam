@@ -533,7 +533,9 @@ done
 printf "Chosen: ${VIDEO_CAMERA_INPUTS[$camera_num,1]} ${VIDEO_CAMERA_INPUTS[$camera_num,0]}\n"
 
 
-darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg backup/samson-yolov3-tiny_final.weights "
+#darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg backup/samson-yolov3-tiny_final.weights "
+
+darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg ../../trained-weight/police2020/samson-yolov3-tiny_final.weights "
 
 darknet_coco_str="./darknet detector demo ./cfg/coco.data ./cfg/yolov3-tiny.cfg ./yolov3-tiny.weights "
 
@@ -765,7 +767,7 @@ do
 			case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
 				"RG10")
 
-					execute_str="$darknet_police_str \"$v4l2src_pipeline_str -e\" -thresh 0.15 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 &"
+					execute_str="$darknet_police_str \"$v4l2src_pipeline_str -e\" -thresh 0.5 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 &"
 				;;
 				*)
 
@@ -776,7 +778,7 @@ do
 ##EOF
 
 execute_str=$(cat <<EOF
-nohup $darknet_police_str -c $camera_num -thresh 0.05 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
+nohup $darknet_police_str -c $camera_num -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
 gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' &>/dev/null &
 EOF
 
