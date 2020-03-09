@@ -1,4 +1,4 @@
 # jetson-nano-ai-cam
 Jetson Nano AI Cam Yolo
 
-Hi test
+For performing interference on the edge
