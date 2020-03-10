@@ -1,5 +1,7 @@
 #!/bin/bash
 
+~/skip_sudo.sh
+
 declare -A VIDEO_CAMERA_INPUTS
 post_to_server=true;
 myIPAddress=$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p' | tr '\n' '|' )
@@ -8,12 +10,14 @@ echo 255 | sudo tee /sys/devices/pwm-fan/target_pwm
 
 clear
 printf "Usages \n"
-printf "./select-camera.sh loop :::: Auto detect resource and restart, log file: restart-log.log\n"
-printf "./select-camera.sh autorun :::: Auto start, without restart\n"
+printf "./select-camera.sh start :::: Auto detect resource and restart, log file: restart-log.log\n"
+printf "./select-camera.sh once :::: Auto start, without restart\n"
+printf "./select-camera.sh stop :::: stop and quit loop\n"
 printf "autorun defaults to /dev/video0\n\n"
 
-~/skip_sudo.sh
 sudo sh -c "echo -1 > /sys/module/usbcore/parameters/autosuspend"
+
+echo $BASHPID > ~/jetson-nano-ai-cam/SELECTCAMERA_PID
 
 kill_darknet()
 {
@@ -57,7 +61,7 @@ loop() {
   # check if process exists
 
   #if not, run again
-  #~/jetson-nano-ai-cam/select-camera.sh autorun
+  #~/jetson-nano-ai-cam/select-camera.sh once
   
   # Check to see how long we actually need to sleep for. If we want this to run
   # once a minute and it's taken more than a minute, then we should just run it
@@ -74,8 +78,7 @@ loop() {
   last=`date +%s`
 
 
-
-  clear
+  #clear
   ~/skip_sudo.sh
   #echo "start loop"
 
@@ -83,7 +86,7 @@ loop() {
   darknet_pid=$(pgrep darknet)
   if [ "$darknet_pid" == "" ]; then
     ##darknet not running, need to run again
-    echo "Darknet not found, restart $now" >> ~/jetson-nano-ai-cam/restart-log.log
+    echo "Darknet not found, restart $datetime" >> ~/jetson-nano-ai-cam/restart-log.log
 
     ~/jetson-nano-ai-cam/select-camera.sh autorun
     #exit 0  
@@ -113,7 +116,7 @@ loop() {
     printf "All darknet process killed\n";
     sleep 3
 
-    ~/jetson-nano-ai-cam/select-camera.sh autorun
+    ~/jetson-nano-ai-cam/select-camera.sh once
 
     #exit 0
   fi
@@ -130,13 +133,13 @@ loop() {
     printf "All darknet process killed\n";
     sleep 3
 
-    ~/jetson-nano-ai-cam/select-camera.sh autorun
+    ~/jetson-nano-ai-cam/select-camera.sh once
 
     #exit 0  
   fi
 
   percentage_free_swap=$( free | grep Swap | awk '{ print $4/$2 }' )
-  acceptable_percentage_free_swap=0.5
+  acceptable_percentage_free_swap=0.3
 
   if (( $(awk 'BEGIN {print ("'$percentage_free_swap'" <= "'$acceptable_percentage_free_swap'")}') )); then
 
@@ -147,7 +150,7 @@ loop() {
     printf "All darknet process killed\n";
     sleep 3
 
-    ~/jetson-nano-ai-cam/select-camera.sh autorun
+    ~/jetson-nano-ai-cam/select-camera.sh once
 
     #exit 0  
   fi
@@ -159,7 +162,7 @@ loop() {
   fi
 
   # Startover
-  echo "Darknet memused: $darknet_virt	System Load: $loadavg_1m	Percentage Free Swap: $percentage_free_swap";
+  echo "$datetime ### Darknet memused: $darknet_virt	System Load: $loadavg_1m	Percentage Free Swap: $percentage_free_swap";
   echo "End Loop, sleep 2s";
   sleep 2
   loop
@@ -167,16 +170,19 @@ loop() {
 
 
 autorun=false;
-if [ "$1" == "autorun" ]; then
+if [ "$1" == "once" ]; then
 	autorun=true
 fi
 
 quit_darknet=false;
-if [ "$1" == "quit" ]; then
+if [ "$1" == "stop" ]; then
 	quit_darknet=true
+	kill_darknet
+	killall select-camera.sh
+	exit 0
 fi
 
-if [ "$1" == "loop" ]; then
+if [ "$1" == "start" ]; then
 	loop
 	exit 0
 fi
@@ -940,14 +946,23 @@ do
 				*)
 
 					#execute_str="$darknet_police_str -c $camera_num -thresh 0.4 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070"
-				##	execute_str=$(cat <<EOF
+
+##output string
+##execute_str=$(cat <<EOF
 ##$darknet_police_str -c $camera_num -thresh 0.05 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
 ##gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' &
 ##EOF
 
+
+##no putput string
+##execute_str=$(cat <<EOF
+##nohup $darknet_police_str -c $camera_num -thresh 0.03 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
+##gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' ##&>/dev/null &
+##EOF
+
+
 execute_str=$(cat <<EOF
-nohup $darknet_police_str -c $camera_num -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
-gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' &>/dev/null &
+nohup $darknet_police_str -c $camera_num -thresh 0.03 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 
 EOF
 
 )
