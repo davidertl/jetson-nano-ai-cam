@@ -6,6 +6,10 @@ today=`date +%Y-%m-%d.%H.%M.%S`
 clear
 ~/skip_sudo.sh
 
+sudo apt-get update
+sudo apt-get install v4l-utils
+sudo apt-get install gawk
+sudo apt-get install curl
 
 sudo snap install modem-manager
 sudo snap install network-manager

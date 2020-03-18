@@ -13,7 +13,7 @@ printf "Usages \n"
 printf "./select-camera.sh start :::: Auto detect resource and restart, log file: restart-log.log\n"
 printf "./select-camera.sh once :::: Auto start, without restart\n"
 printf "./select-camera.sh stop :::: stop and quit loop\n"
-printf "autorun defaults to /dev/video0\n\n"
+printf "once defaults to /dev/video0\n\n"
 
 sudo sh -c "echo -1 > /sys/module/usbcore/parameters/autosuspend"
 
@@ -68,7 +68,6 @@ loop() {
   # anyway.
 
 
-
   #alt for check mem usage
   #pmap 22634 | tail -n 1 | awk '/[0-9]K/{print $2}'
 
@@ -82,13 +81,15 @@ loop() {
   ~/skip_sudo.sh
   #echo "start loop"
 
+	datetime=$(date '+%Y-%m-%d %H:%M:%S')
+
   ##Actual check
   darknet_pid=$(pgrep darknet)
   if [ "$darknet_pid" == "" ]; then
     ##darknet not running, need to run again
-    echo "Darknet not found, restart $datetime" >> ~/jetson-nano-ai-cam/restart-log.log
+    echo "Darknet not found, start $datetime" >> ~/jetson-nano-ai-cam/restart-log.log
 
-    ~/jetson-nano-ai-cam/select-camera.sh autorun
+    ~/jetson-nano-ai-cam/select-camera.sh once
     #exit 0  
   fi
 
@@ -97,9 +98,7 @@ loop() {
 #     sudo nvpmodel -m 1
 #     printf "\nSet to 5W successfully\n"
 #  fi
-  
-
-  datetime=$(date '+%Y-%m-%d %H:%M:%S')
+   
 
   darknet_pid=$(pgrep darknet)
 
@@ -138,23 +137,32 @@ loop() {
     #exit 0  
   fi
 
-  percentage_free_swap=$( free | grep Swap | awk '{ print $4/$2 }' )
-  acceptable_percentage_free_swap=0.3
 
-  if (( $(awk 'BEGIN {print ("'$percentage_free_swap'" <= "'$acceptable_percentage_free_swap'")}') )); then
 
-    echo "Too much swap, restart!";
-    echo "Swap overload, restart $datetime" >> ~/jetson-nano-ai-cam/restart-log.log
-    
-    kill_darknet
-    printf "All darknet process killed\n";
-    sleep 3
+	if [[ $( cat /proc/meminfo | grep SwapFree | awk '{print $2}' ) != "" ]]; then
 
-    ~/jetson-nano-ai-cam/select-camera.sh once
+		percentage_free_swap=$( free | grep Swap | awk '{ print $4/$2 }' )
+		acceptable_percentage_free_swap=0.3
 
-    #exit 0  
-  fi
 
+		if (( $(awk 'BEGIN {print ("'$percentage_free_swap'" <= "'$acceptable_percentage_free_swap'")}') )); then
+
+			echo "Too much swap, restart!";
+			echo "Swap overload, restart $datetime" >> ~/jetson-nano-ai-cam/restart-log.log
+			
+			kill_darknet
+			printf "All darknet process killed\n";
+			sleep 3
+
+			~/jetson-nano-ai-cam/select-camera.sh once
+
+			#exit 0  
+		fi
+		
+	fi
+
+
+	runInterval=0
 
   # Set the sleep interval
   if [[ ! $((now-last+runInterval+1)) -lt $((runInterval)) ]]; then
@@ -162,12 +170,22 @@ loop() {
   fi
 
   # Startover
-  echo "$datetime ### Darknet memused: $darknet_virt	System Load: $loadavg_1m	Percentage Free Swap: $percentage_free_swap";
+
+	if [[ $( cat /proc/meminfo | grep SwapFree | awk '{print $2}' ) != "" ]]; then
+	  echo "$datetime ### Darknet memused: $darknet_virt	System Load: $loadavg_1m	Percentage Free Swap: $percentage_free_swap";
+	else
+		echo "$datetime ### Darknet memused: $darknet_virt	System Load: $loadavg_1m	Percentage Free Swap: 1";
+	fi
+
   echo "End Loop, sleep 2s";
   sleep 2
   loop
 }
 
+
+###################
+#Detects if there are arguments from the command line
+###################
 
 autorun=false;
 if [ "$1" == "once" ]; then
@@ -190,6 +208,32 @@ fi
 
 
 
+###################
+#show info function
+###################
+show_device_info()
+{
+
+			dpkg-query --show nvidia-l4t-core
+
+			printf "compare latest version with: https://developer.nvidia.com/embedded/linux-tegra-archive\n";
+
+			sudo nmcli device
+			sudo nmcli con
+			read -n1 -r -p "Press any key to continue..." key
+			sudo lsusb 
+			read -n1 -r -p "Press any key to continue..." key
+			sudo modem-manager.mmcli -L
+			read -n1 -r -p "Press any key to continue..." key
+			sudo mmcli -m $modem_id
+}
+
+
+###################
+#script starts here
+###################
+
+
 #Check if mobile device is plugged in, if yes and  not activated, try to activate it
 mobile_device_name=$(nmcli con show | awk ' /mobile_network/ {print $4}')
 if [[ $mobile_device_name == "--" && -e $(lsusb | grep Modem) ]]; then
@@ -201,6 +245,11 @@ fi
 
 
 #enable location
+
+
+###################
+#init and get environment variables
+###################
 
 modem_id=0
 
@@ -224,12 +273,6 @@ if [[ -e $(lsusb | grep Modem) ]]; then
 
 fi
 
-#Check if jetson_hotspot is enabled, if yes and  not activated, try to activate it
-jetson_hotspot=$(nmcli con show | awk ' /jetson_hotspot/ {print $4}')
-if [[ $jetson_hotspot == "--" ]]; then
-	sudo nmcli con up jetson_hotspot
-	sudo nmcli con mod jetson_hotspot connection.autoconnect yes
-fi
 
 
 #today=`date +%Y-%m-%d.%H:%M:%S`
@@ -245,10 +288,26 @@ shopt -u nullglob # Turn off nullglob to make sure it doesn't interfere with any
 if (( ${#video_camera_array[@]} == 0 )); then
     echo "No Cameras found" >&2
 
+
+	###################
+	#show some extra info here
+	###################
+	show_device_info
+
 	##Todo make buzzer sound
 	
     exit 0
 fi
+
+
+#Check if jetson_hotspot is enabled, if yes and  not activated, try to activate it
+jetson_hotspot=$(nmcli con show | awk ' /jetson_hotspot/ {print $4}')
+if [[ $jetson_hotspot == "--" ]]; then
+	sudo nmcli con up jetson_hotspot
+	sudo nmcli con mod jetson_hotspot connection.autoconnect yes
+fi
+
+
 
 echo "Found devices ============================";
 echo "${video_camera_array[@]}"
@@ -633,11 +692,10 @@ do
 
 		s)
 			clear
-			sudo nmcli device
-			sudo nmcli con 
-			sudo lsusb 
-			sudo modem-manager.mmcli -L
-			sudo mmcli -m $modem_id
+
+			show_device_info
+			read -n1 -r -p "Press any key to continue..." key
+
 			#sudo modem-manager.mmcli -m 2
 
 			sudo tail -4 /root/ngrok/log.txt | awk ' /addr\=/ { gsub(/url=tcp\:\/\/|url=/, ""); print $NF}' 
@@ -909,11 +967,11 @@ do
 			case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
 				"RG10")
 
-					execute_str="$darknet_police_str \"$v4l2src_pipeline_str -e\" -thresh 0.4"
+					execute_str="$darknet_police_str \"$v4l2src_pipeline_str -e\" -thresh 0.1"
 				;;
 				*)
 
-					execute_str="$darknet_police_str -c $camera_num -thresh 0.4"
+					execute_str="$darknet_police_str -c $camera_num -thresh 0.1"
 				;;
 			esac
 
@@ -941,29 +999,28 @@ do
 			case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
 				"RG10")
 
-					execute_str="$darknet_police_str \"$v4l2src_pipeline_str -e\" -thresh 0.5 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 &"
+					execute_str="$darknet_police_str \"$v4l2src_pipeline_str -e\" -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 &"
 				;;
 				*)
 
-					#execute_str="$darknet_police_str -c $camera_num -thresh 0.4 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070"
+					#execute_str="$darknet_police_str -c $camera_num -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070"
 
 ##output string
 ##execute_str=$(cat <<EOF
-##$darknet_police_str -c $camera_num -thresh 0.05 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
+##$darknet_police_str -c $camera_num -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
 ##gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' &
 ##EOF
 
 
 ##no putput string
-##execute_str=$(cat <<EOF
-##nohup $darknet_police_str -c $camera_num -thresh 0.03 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
-##gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' ##&>/dev/null &
-##EOF
-
-
 execute_str=$(cat <<EOF
-nohup $darknet_police_str -c $camera_num -thresh 0.03 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 
+nohup $darknet_police_str -c $camera_num -thresh 0.31 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
+gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' &>/dev/null &
 EOF
+
+#execute_str=$(cat <<EOF
+#nohup $darknet_police_str -c $camera_num -thresh 0.03 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 
+#EOF
 
 )
 
