@@ -15,7 +15,7 @@ sudo apt-get install -y python3-pip libhdf5-serial-dev hdf5-tools
 
 sudo apt-get install -y build-essential cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
 sudo apt-get install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
-sudo apt-get install -y python2.7-dev python3.6-dev python-dev python-numpy python3-numpy
+sudo apt-get install -y python3.6-dev python-dev python-numpy python3-numpy
 sudo apt-get install -y libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
 sudo apt-get install -y libv4l-dev v4l-utils qv4l2 v4l2ucp
 sudo apt-get install -y curl
@@ -32,8 +32,14 @@ sudo apt-get install -y python3-pip
 
 #sudo pip3 install --pre --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v42 tensorflow-gpu
 
-sudo pip3 install -U pip testresources setuptools
+##https://developer.nvidia.com/embedded/downloads#?search=tensorflow
+sudo -H pip3 install --pre --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v43 tensorflow==1.15.2+nv20.2
+
+sudo -H pip3 install -U pip testresources setuptools
 
 #sudo pip3 install -U numpy==1.16.1 future==0.17.1 mock==3.0.5 h5py==2.9.0 keras_preprocessing==1.0.5 keras_applications==1.0.8 gast==0.2.2 futures protobuf pybind11
+
+sudo -H pip3 install -U numpy future mock h5py keras_preprocessing keras_application gast futures protobuf pybind11 grpcio absl-py py-cpuinfo psutil portpicker six mock requests gast h5py astor termcolor protobuf keras-applications keras-preprocessing wrapt google-pasta
+
 
 

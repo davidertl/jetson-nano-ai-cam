@@ -15,7 +15,7 @@ printf "./select-camera.sh once :::: Auto start, without restart\n"
 printf "./select-camera.sh stop :::: stop and quit loop\n"
 printf "once defaults to /dev/video0\n\n"
 
-sudo sh -c "echo -1 > /sys/module/usbcore/parameters/autosuspend"
+#sudo sh -c "echo -1 > /sys/module/usbcore/parameters/autosuspend"
 
 echo $BASHPID > ~/jetson-nano-ai-cam/SELECTCAMERA_PID
 
