@@ -29,6 +29,14 @@ dependencies=(build-essential cmake pkg-config libavcodec-dev libavformat-dev li
 
 sudo apt install -y ${dependencies[@]}
 
+##for deepstream
+sudo apt-get update
+sudo apt-get install v4l-utils
+sudo apt-get install gawk
+sudo apt-get install curl
+
+sudo snap install modem-manager
+sudo snap install network-manager
 
 
 ##for tensorflow
