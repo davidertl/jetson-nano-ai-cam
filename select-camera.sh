@@ -765,7 +765,12 @@ printf "Chosen: ${VIDEO_CAMERA_INPUTS[$camera_num,1]} ${VIDEO_CAMERA_INPUTS[$cam
 
 #darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg ../../trained-weight/police2020/samson-yolov3-tiny_final.weights "
 
-darknet_police_str="./darknet detector demo ~/trained-weights/police/interference-samson-obj.data ~/trained-weights/police/interference-samson-yolov3-tiny.cfg ~/trained-weights/police/samson-yolov3-tiny_final.weights "
+darknet_police_str="./darknet detector demo ~/trained-weight/police2020/samson-obj.data ~/trained-weight/police2020/samson-yolov3-tiny.cfg ~/trained-weight/police2020/samson-yolov3-tiny_final.weights "
+
+
+darknet_mask_str="./darknet detector demo ~/trained-weight/mask2020/samson-obj.data ~/trained-weight/mask2020/samson-mask-yolov3-tiny.cfg ~/trained-weight/mask2020/samson-mask-yolov3-tiny_final.weights "
+
+
 
 darknet_coco_str="./darknet detector demo ./cfg/coco.data ./cfg/yolov3-tiny.cfg ./yolov3-tiny.weights "
 

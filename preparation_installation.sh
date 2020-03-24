@@ -10,6 +10,28 @@ sudo apt-get install -y gawk curl
 sudo apt-get install -y python3-pip libhdf5-serial-dev hdf5-tools
 
 
+##for deepstreem 4
+sudo apt install \
+   libssl1.0.0 \
+   libgstreamer1.0-0 \
+   gstreamer1.0-tools \
+   gstreamer1.0-plugins-good \
+   gstreamer1.0-plugins-bad \
+   gstreamer1.0-plugins-ugly \
+   gstreamer1.0-libav \
+   libgstrtspserver-1.0-0 \
+   libjansson4=2.11-1
+
+
+
+##for opencv 4
+dependencies=(build-essential cmake pkg-config libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libavresample-dev python3-dev libtbb2 libtbb-dev libtiff-dev libjpeg-dev libpng-dev libtiff-dev libdc1394-22-dev libgtk-3-dev libcanberra-gtk3-module libatlas-base-dev gfortran wget unzip)
+
+sudo apt install -y ${dependencies[@]}
+
+
+
+##for tensorflow
 
 #sudo systemctl set-default multi-user.target
 
@@ -43,3 +65,8 @@ sudo -H pip3 install -U numpy future mock h5py keras_preprocessing keras_applica
 
 
 
+#sudo dpkg -i OpenCV-4.1.1-dirty-aarch64-*.deb
+
+sudo apt-get --with-new-pkgs upgrade
+sudo apt autoremove
+apt-get dist-upgrade
