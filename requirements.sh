@@ -10,6 +10,12 @@ sudo apt-get install -y gawk curl
 sudo apt-get install -y python3-pip libhdf5-serial-dev hdf5-tools
 
 
+
+## networking and modem
+sudo snap install modem-manager
+sudo snap install network-manager
+
+
 ##for deepstreem 4
 sudo apt install \
    libssl1.0.0 \
@@ -22,6 +28,11 @@ sudo apt install \
    libgstrtspserver-1.0-0 \
    libjansson4=2.11-1
 
+##for deepstream
+sudo apt-get update
+sudo apt-get install v4l-utils
+sudo apt-get install gawk
+sudo apt-get install curl
 
 
 ##for opencv 4
@@ -29,14 +40,9 @@ dependencies=(build-essential cmake pkg-config libavcodec-dev libavformat-dev li
 
 sudo apt install -y ${dependencies[@]}
 
-##for deepstream
-sudo apt-get update
-sudo apt-get install v4l-utils
-sudo apt-get install gawk
-sudo apt-get install curl
 
-sudo snap install modem-manager
-sudo snap install network-manager
+
+
 
 
 ##for tensorflow
@@ -76,5 +82,5 @@ sudo -H pip3 install -U numpy future mock h5py keras_preprocessing keras_applica
 #sudo dpkg -i OpenCV-4.1.1-dirty-aarch64-*.deb
 
 sudo apt-get --with-new-pkgs upgrade
-sudo apt autoremove
-apt-get dist-upgrade
+sudo apt autoremove -y
+sudo apt-get dist-upgrade -y
