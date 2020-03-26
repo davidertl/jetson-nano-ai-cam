@@ -41,9 +41,6 @@ dependencies=(build-essential cmake pkg-config libavcodec-dev libavformat-dev li
 sudo apt install -y ${dependencies[@]}
 
 
-##for onnx
-sudo apt-get install protobuf-compiler libprotoc-dev
-pip install onnx==1.4.1
 
 
 ##for tensorflow
@@ -78,6 +75,13 @@ sudo -H pip3 install -U pip testresources setuptools
 
 sudo -H pip3 install -U numpy future mock h5py keras_preprocessing keras_application gast futures protobuf pybind11 grpcio absl-py py-cpuinfo psutil portpicker six mock requests gast h5py astor termcolor protobuf keras-applications keras-preprocessing wrapt google-pasta
 
+
+##for onnx
+sudo apt-get install protobuf-compiler libprotoc-dev
+sudo -H pip install onnx==1.4.1
+
+sudo -H pip3 install pycuda
+sudo -H pip3 install Pillow
 
 
 #sudo dpkg -i OpenCV-4.1.1-dirty-aarch64-*.deb
