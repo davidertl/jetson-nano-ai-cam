@@ -41,8 +41,9 @@ dependencies=(build-essential cmake pkg-config libavcodec-dev libavformat-dev li
 sudo apt install -y ${dependencies[@]}
 
 
-
-
+##for onnx
+sudo apt-get install protobuf-compiler libprotoc-dev
+pip install onnx==1.4.1
 
 
 ##for tensorflow
