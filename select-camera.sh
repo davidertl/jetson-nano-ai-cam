@@ -19,6 +19,8 @@ printf "once defaults to /dev/video0\n\n"
 
 echo $BASHPID > ~/jetson-nano-ai-cam/SELECTCAMERA_PID
 
+nvvidconv_flip=""
+
 kill_darknet()
 {
 
@@ -265,10 +267,12 @@ show_camera_selection_dialog()
 
 	done
 
-	dialog_menu+=("q - Quit")
-  dialog_menu+=("")
-	dialog_menu+=("o - Advanced Options ")
-	dialog_menu+=("")
+	dialog_menu+=("k")
+  dialog_menu+=("Kill Interference")
+	dialog_menu+=("q")
+  dialog_menu+=("Quit")
+	dialog_menu+=("o")
+	dialog_menu+=("Advanced Options")
 
 	return_str=$(whiptail --backtitle "Listing all the UVC Cameras" \
 										--title "Select the video device" \
@@ -278,6 +282,30 @@ show_camera_selection_dialog()
 	camera_num=$(echo $return_str | rev | cut -b -1 )
 
 	#read -n1 -r -p "Press any key to continue..." key
+
+	case $return_str in
+
+		"k")
+			kill_darknet
+			show_camera_selection_dialog
+		;;
+		
+
+		"q")
+			exit 0
+		;;
+		
+		"o")
+			show_advanced_options
+		;;
+
+		*)
+			show_camera_functions
+		;;
+
+	esac
+
+	
 
 }
 
@@ -298,6 +326,7 @@ show_advanced_options()
 	function_selection=$(whiptail --backtitle "${back_title}" \
 										--title "Advanced Options" \
 										--menu "Select the below functions" 25 78 14 \
+										"00" "Toggle Rotate Camera by 180 degree(Current:${nvvidconv_flip})" \
 										"01" "Kill running darknet interference" \
 										"02" "Toggle FPS(Current: ${framerate})" \
 										"03" "Toggle Power Mode(Current: ${current_power_mode})" \
@@ -317,6 +346,22 @@ show_advanced_options()
 	##function_selection=$(echo $return_str | cut -b 1 )
 
 	case $function_selection in
+
+		00)
+			clear
+			if [[ $nvvidconv_flip == "" ]]; then
+				nvvidconv_flip="flip-method=2 "
+			else	
+				nvvidconv_flip=""
+			fi
+	
+			printf "Rotate camera by 180degree: $nvvidconv_flip\n";
+
+			#read -n1 -r -p "Press any key to continue..." key
+			show_advanced_options
+		;;
+
+
 
 		01)
 			clear
@@ -348,7 +393,7 @@ show_advanced_options()
 	
 			printf "New Framerate: $framerate\n";
 
-			read -n1 -r -p "Press any key to continue..." key
+			#read -n1 -r -p "Press any key to continue..." key
 			show_advanced_options
 		;;
 
@@ -378,7 +423,7 @@ show_advanced_options()
 			sudo nvpmodel -q
 			
 			printf "No of CPU: $(grep -c ^processor /proc/cpuinfo)\n";
-			read -n1 -r -p "Press any key to continue..." key
+			#read -n1 -r -p "Press any key to continue..." key
 			show_advanced_options
 
 
@@ -540,6 +585,8 @@ show_advanced_options()
 		;;
 	esac
 
+	show_camera_selection_dialog
+
 }
 
 
@@ -552,6 +599,8 @@ show_camera_functions()
 
 	##just kill in case it is running
 	kill_darknet_slient
+
+	build_pipeline
 
 	back_title="Chosen Camera: ${VIDEO_CAMERA_INPUTS[$camera_num,1]} ${VIDEO_CAMERA_INPUTS[$camera_num,0]} ${VIDEO_CAMERA_INPUTS[$camera_num,5]}x${VIDEO_CAMERA_INPUTS[$camera_num,6]}@${VIDEO_CAMERA_INPUTS[$camera_num,7]}fps"
 
@@ -602,6 +651,9 @@ EOF
 
 				*)
 
+
+echo $v4l2src_pipeline_str
+
 					#execute_str="$darknet_police_str -c $camera_num -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070"
 
 ##Basic version
@@ -618,12 +670,16 @@ EOF
 
 
 ##redirect stdout to null
+
 execute_str=$(cat <<EOF
-nohup $darknet_police_str -c $camera_num -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
-gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' &>/dev/null &
+nohup $darknet_police_str "$v4l2src_pipeline_str" -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
+gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} '  &
 EOF
 )
-echo "****"
+#1>&2
+#&>/dev/null &
+
+
 
 				;;
 			esac
@@ -706,7 +762,7 @@ EOF
 					#v4l2src_pipeline_str=${v4l2src_pipeline_str//1640/1920}	
 					#v4l2src_pipeline_str=${v4l2src_pipeline_str//1232/1080}	
 
-					v4l2src_display_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1640, height=(int)1232, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! nvoverlaysink sync=false async=false"					
+					v4l2src_display_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1640, height=(int)1232, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv ${nvvidconv_flip} ! nvoverlaysink sync=false async=false"					
 					execute_str="gst-launch-1.0 $v4l2src_display_str -e"
 				;;
 				"MJPG")					
@@ -715,7 +771,7 @@ EOF
 					#working
 					#v4l2src_display_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! image/jpeg, width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)RGBA' ! nvoverlaysink sync=false async=false"			
 
-					v4l2src_display_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! image/jpeg, width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! jpegparse ! jpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvoverlaysink sync=false async=false"		
+					v4l2src_display_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! image/jpeg, width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! jpegparse ! jpegdec ! video/x-raw ! nvvidconv ${nvvidconv_flip} ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvoverlaysink sync=false async=false"		
 
 
 					execute_str="gst-launch-1.0 $v4l2src_display_str -e"
@@ -725,17 +781,22 @@ EOF
 
 				*)
 					#v4l2src_display_str=${v4l2src_pipeline_str//appsink/ nvvidconv ! 'video/x-raw\(memory:NVMM\), format=I420,  width=\(int\)1920, height=\(int\)1080, framerate=30/1' ! nvoverlaysink}
-					v4l2src_display_str=${v4l2src_pipeline_str//appsink/ nvvidconv ! nvoverlaysink}
+					v4l2src_display_str=${v4l2src_pipeline_str//appsink/ nvvidconv $nvvidconv_flip ! nvoverlaysink}
 					
 					#v4l2src_display_str=${v4l2src_display_str//appsink/ xvimagesink}
 					execute_str="gst-launch-1.0 $v4l2src_display_str -e"
 				;;
+				
 			esac
+
+		
 		
 			#execute_str="gst-launch-1.0 $v4l2src_display_str -e"
 			printf "\nDebug: $execute_str\n"
 	
 			eval $execute_str
+
+			read -n1 -r -p "Press any key to continue..." key
 
 		;;
 
@@ -774,6 +835,97 @@ EOF
 
 
 }
+
+
+###################
+#Building the Execution String
+###################
+build_pipeline()
+{
+
+#darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg backup/samson-yolov3-tiny_final.weights "
+
+#darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg ../../trained-weight/police2020/samson-yolov3-tiny_final.weights "
+
+darknet_police_str="./darknet detector demo ~/trained-weight/police2020/samson-obj.data ~/trained-weight/police2020/samson-yolov3-tiny.cfg ~/trained-weight/police2020/samson-yolov3-tiny_final.weights "
+
+
+darknet_mask_str="./darknet detector demo ~/trained-weight/mask2020/samson-obj.data ~/trained-weight/mask2020/samson-mask-yolov3-tiny.cfg ~/trained-weight/mask2020/samson-mask-yolov3-tiny_final.weights "
+
+
+darknet_coco_str="./darknet detector demo ./cfg/coco.data ./cfg/yolov3-tiny.cfg ./yolov3-tiny.weights "
+
+v4l2src_pipeline_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! "
+
+
+case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
+
+	"YUYV")
+		v4l2src_pipeline_str+="video/x-raw, format=YUY2, "
+	;;
+
+	"MJPG")
+		v4l2src_pipeline_str+="image/jpeg, "
+	;;
+
+	"H264")
+		v4l2src_pipeline_str+="video/x-h264, "
+	;;	
+
+esac
+
+
+v4l2src_pipeline_str+="width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! "
+
+case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
+
+
+	"RG10")
+		#onboard camera completely different
+		v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1600, height=(int)1200, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! 'video/x-raw, format=(string)BGRx' ! videoconvert ! 'video/x-raw, format=(string)BGR' ! "
+		#v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1640, height=(int)1232, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! 'video/x-raw, format=(string)BGRx' ! videoconvert ! 'video/x-raw, format=(string)BGR' ! tee name=t  t. !"
+	;;
+
+	"YUYV")
+		
+		v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=I420 ! "
+	;;
+
+	"MJPG")
+		##jpegdec > nvjpegdec
+	
+		## working with nvoverlay, not yolo
+		#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)RGBA' ! "
+
+		#works for display only
+		#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! "
+
+		#opencv expects BGR
+		v4l2src_pipeline_str+="jpegparse ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! video/x-raw,format=(string)BGR ! "
+	;;
+
+	"H264")
+		# Jetson Nano    enable-low-outbuffer=1 
+		# Jetson Nano max perf   disable-dvfs=1
+		v4l2src_pipeline_str+="omxh264dec enable-low-outbuffer=1  disable-dvfs=1 ! videoconvert ! "
+		#v4l2src_pipeline_str+="nvv4l2decoder ! "
+	;;	
+
+esac
+
+#v4l2src_pipeline_str+=" tee name=t t. ! nvvidconv ! omxh264enc control-rate=2  bitrate=6000000 peak-bitrate=6500000  preset-level=2 profile=8 !  'video/x-h264, stream-format=(string)byte-stream, level=(string)5.2' ! h264parse ! qtmux ! filesink location=/mnt/sandisk/$today.mov t. ! "
+
+
+v4l2src_pipeline_str+=" appsink sync=false async=false "
+
+#printf "$v4l2src_pipeline_str\n\n";
+
+darknet_exe_str+=" \"$v4l2src_pipeline_str\" "
+
+execute_str=""
+
+}
+
 
 ###################
 #script starts here
@@ -1027,7 +1179,7 @@ fi
 
 
 ## autorun, then directly assume it is camera 0
-if $autorun ; then
+if $autorun; then
 	camera_num="0"
 
 else
@@ -1048,92 +1200,7 @@ function_selection=1
 #printf "Chosen: ${VIDEO_CAMERA_INPUTS[$camera_num,1]} ${VIDEO_CAMERA_INPUTS[$camera_num,0]}\n"
 
 
-###################
-#Building the Execution String
-###################
 
-#darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg backup/samson-yolov3-tiny_final.weights "
-
-#darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg ../../trained-weight/police2020/samson-yolov3-tiny_final.weights "
-
-darknet_police_str="./darknet detector demo ~/trained-weight/police2020/samson-obj.data ~/trained-weight/police2020/samson-yolov3-tiny.cfg ~/trained-weight/police2020/samson-yolov3-tiny_final.weights "
-
-
-darknet_mask_str="./darknet detector demo ~/trained-weight/mask2020/samson-obj.data ~/trained-weight/mask2020/samson-mask-yolov3-tiny.cfg ~/trained-weight/mask2020/samson-mask-yolov3-tiny_final.weights "
-
-
-darknet_coco_str="./darknet detector demo ./cfg/coco.data ./cfg/yolov3-tiny.cfg ./yolov3-tiny.weights "
-
-v4l2src_pipeline_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! "
-
-
-case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
-
-	"YUYV")
-		v4l2src_pipeline_str+="video/x-raw, format=YUY2, "
-	;;
-
-	"MJPG")
-		v4l2src_pipeline_str+="image/jpeg, "
-	;;
-
-	"H264")
-		v4l2src_pipeline_str+="video/x-h264, "
-	;;	
-
-esac
-
-
-v4l2src_pipeline_str+="width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! "
-
-case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
-
-
-	"RG10")
-		#onboard camera completely different
-		v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1600, height=(int)1200, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! 'video/x-raw, format=(string)BGRx' ! videoconvert ! 'video/x-raw, format=(string)BGR' ! "
-		#v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1640, height=(int)1232, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! 'video/x-raw, format=(string)BGRx' ! videoconvert ! 'video/x-raw, format=(string)BGR' ! tee name=t  t. !"
-	;;
-
-	"YUYV")
-		
-		v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=I420 ! "
-	;;
-
-	"MJPG")
-		##jpegdec > nvjpegdec
-	
-		## working with nvoverlay, not yolo
-		#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)RGBA' ! "
-
-		#works for display only
-		#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! "
-
-		#opencv expects BGR
-		v4l2src_pipeline_str+="jpegparse ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! video/x-raw,format=(string)BGR ! "
-	;;
-
-	"H264")
-		# Jetson Nano    enable-low-outbuffer=1 
-		# Jetson Nano max perf   disable-dvfs=1
-		v4l2src_pipeline_str+="omxh264dec enable-low-outbuffer=1  disable-dvfs=1 ! videoconvert ! "
-		#v4l2src_pipeline_str+="nvv4l2decoder ! "
-	;;	
-
-esac
-
-#v4l2src_pipeline_str+=" tee name=t t. ! nvvidconv ! omxh264enc control-rate=2  bitrate=6000000 peak-bitrate=6500000  preset-level=2 profile=8 !  'video/x-h264, stream-format=(string)byte-stream, level=(string)5.2' ! h264parse ! qtmux ! filesink location=/mnt/sandisk/$today.mov t. ! "
-
-
-v4l2src_pipeline_str+=" appsink sync=false async=false "
-
-#printf "$v4l2src_pipeline_str\n\n";
-
-darknet_exe_str+=" \"$v4l2src_pipeline_str\" "
-
-
-
-execute_str=""
 
 printf "\n"
 
@@ -1147,7 +1214,7 @@ printf "\n"
 #read
 
 ## create needed dir
-if [ ! -d ~/images ]; then
+if [[ ! -d ~/images ]]; then
   mkdir -p ~/images;
 fi
 
