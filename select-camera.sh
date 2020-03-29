@@ -9,11 +9,15 @@ myIPAddress=${myIPAddress::-1}
 echo 255 | sudo tee /sys/devices/pwm-fan/target_pwm
 
 clear
+
+display_usage_help()
+{
 printf "Usages \n"
 printf "./select-camera.sh start :::: Auto detect resource and restart, log file: restart-log.log\n"
 printf "./select-camera.sh once :::: Auto start, without restart\n"
 printf "./select-camera.sh stop :::: stop and quit loop\n"
 printf "once defaults to /dev/video0\n\n"
+}
 
 #sudo sh -c "echo -1 > /sys/module/usbcore/parameters/autosuspend"
 
@@ -106,8 +110,7 @@ loop() {
 
   darknet_virt=$(cat /proc/$darknet_pid/stat | cut -d" " -f23)
 
-             #13836177408
-  if [ $darknet_virt -ge 13900000000  ]; then
+  if [ $darknet_virt -ge 16000000000  ]; then
 
     echo "Consumed too much memory, restart!";
 
@@ -123,9 +126,10 @@ loop() {
   fi
 
   loadavg_1m=$( cat /proc/loadavg | cut -d" " -f1)
-  acceptable_cpuload=5
+  acceptable_max_cpuload=5
 
-  if (( $(awk 'BEGIN {print ("'$loadavg_1m'" >= "'$acceptable_cpuload'")}') )); then
+  if (( $(awk 'BEGIN {print ("'$loadavg_1m'" >= "'$acceptable_max_cpuload'")}') )); then
+#  if [ "$acceptable_max_cpuload" -ge "$loadavg_1m" ]; then
 
     echo "Overloading system, restart!";
     echo "Overload, restart $datetime" >> ~/jetson-nano-ai-cam/restart-log.log
@@ -162,6 +166,29 @@ loop() {
 		fi
 		
 	fi
+
+
+
+
+	free_memory=$( cat /proc/meminfo | grep MemFree | head -n 1 | awk '{print $2}' )
+	acceptable_free_memory=450000
+
+
+#	if (( $(awk 'BEGIN {print ("'$free_memory'" <= "'$acceptable_free_memory'")}') )); then
+  if [ "$free_memory" -le "$acceptable_free_memory" ]; then
+
+		echo "Too little memory left, restart!";
+		echo "memory usage overload, restart $datetime" >> ~/jetson-nano-ai-cam/restart-log.log
+		
+		kill_darknet
+		printf "All darknet process killed\n";
+		sleep 3
+
+		~/jetson-nano-ai-cam/select-camera.sh once
+
+		#exit 0  
+	fi
+	
 
 
 	runInterval=0
@@ -1242,4 +1269,4 @@ runInterval=5 # In seconds
 #eval $darknet_police_str
 
 #nohup command &>/dev/null &
-
+display_usage_help
