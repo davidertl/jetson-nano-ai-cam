@@ -3,11 +3,76 @@
 ~/skip_sudo.sh
 
 declare -A VIDEO_CAMERA_INPUTS
+declare -A yolo_detection_options
+
 post_to_server=true;
 myIPAddress=$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p' | tr '\n' '|' )
 myIPAddress=${myIPAddress::-1}
 echo 255 | sudo tee /sys/devices/pwm-fan/target_pwm
 
+v4l2src_pipeline_str=""
+nvvidconv_flip=""
+
+#today=`date +%Y-%m-%d.%H:%M:%S`
+today=`date +%Y%m%d-%H%M%S`
+
+yolo_detection_options[0,0]="Face Mask (Require GUI X11)"
+yolo_detection_options[0,1]="~/trained-weight/mask2020/samson-obj.edge.data"
+yolo_detection_options[0,2]="~/trained-weight/mask2020/samson-yolov3-tiny.cfg"
+yolo_detection_options[0,3]="~/trained-weight/mask2020/samson-yolov3-tiny_final.weights"
+yolo_detection_options[0,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
+
+yolo_detection_options[1,0]="Face Mask No display (http://${myIPAddress}:8090)"
+yolo_detection_options[1,1]="${yolo_detection_options[0,1]}" ##same
+yolo_detection_options[1,2]="${yolo_detection_options[0,2]}" ##same
+yolo_detection_options[1,3]="${yolo_detection_options[0,3]}" ##same
+yolo_detection_options[1,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[0,4]}"
+
+yolo_detection_options[2,0]="Face Mask High accuracy (Require GUI X11)"
+yolo_detection_options[2,1]="~/trained-weight/mask2020/samson-obj.edge.data"
+yolo_detection_options[2,2]="~/trained-weight/mask2020/samson-yolov3-tiny-832.cfg"
+yolo_detection_options[2,3]="~/trained-weight/mask2020/samson-yolov3-tiny_final-832.weights"
+yolo_detection_options[2,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
+
+yolo_detection_options[3,0]="Face Mask High accuracy (http://${myIPAddress}:8090)"
+yolo_detection_options[3,1]="${yolo_detection_options[2,1]}" ##same
+yolo_detection_options[3,2]="${yolo_detection_options[2,2]}" ##same
+yolo_detection_options[3,3]="${yolo_detection_options[2,3]}" ##same
+yolo_detection_options[3,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[2,4]}" 
+
+yolo_detection_options[4,0]="HK Police (Require GUI X11)"
+yolo_detection_options[4,1]="~/trained-weight/police2020/samson-obj.edge.data"
+yolo_detection_options[4,2]="~/trained-weight/police2020/samson-yolov3-tiny.cfg"
+yolo_detection_options[4,3]="~/trained-weight/police2020/samson-yolov3-tiny_last.weights"
+yolo_detection_options[4,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
+
+yolo_detection_options[5,0]="HK Police (http://${myIPAddress}:8090)"
+yolo_detection_options[5,1]="${yolo_detection_options[4,1]}" ##same
+yolo_detection_options[5,2]="${yolo_detection_options[4,2]}" ##same
+yolo_detection_options[5,3]="${yolo_detection_options[4,3]}" ##same
+yolo_detection_options[5,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[4,4]}"
+
+
+yolo_detection_options[6,0]="80 Different objects (Require GUI X11)"
+yolo_detection_options[6,1]="~/trained-weight/reference/coco.data"
+yolo_detection_options[6,2]="~/trained-weight/reference/yolov3-tiny.cfg"
+yolo_detection_options[6,3]="~/trained-weight/reference/yolov3-tiny.weights"
+yolo_detection_options[6,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
+
+yolo_detection_options[7,0]="80 Different objects (http://${myIPAddress}:8090)"
+yolo_detection_options[7,1]="${yolo_detection_options[6,1]}" ##same
+yolo_detection_options[7,2]="${yolo_detection_options[6,2]}" ##same
+yolo_detection_options[7,3]="${yolo_detection_options[6,3]}" ##same
+yolo_detection_options[7,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[6,4]}" 
+
+yolo_detection_options[8,0]="HK Police 512 (Require GUI X11)"
+yolo_detection_options[8,1]="~/trained-weight/police2020/samson-obj.edge.data"
+yolo_detection_options[8,2]="~/trained-weight/police2020/samson-yolov3-tiny-512.cfg"
+yolo_detection_options[8,3]="~/trained-weight/police2020/samson-yolov3-tiny_last-512.weights"
+yolo_detection_options[8,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
+
+
+#pause
 clear
 
 display_usage_help()
@@ -24,6 +89,19 @@ printf "once defaults to /dev/video0\n\n"
 echo $BASHPID > ~/jetson-nano-ai-cam/SELECTCAMERA_PID
 
 nvvidconv_flip=""
+
+pause()
+{
+	read -n1 -r -p "Press any key to continue..." key
+	case $key in
+		 $'\e')
+		 printf "\n(Escape key)\n"
+		 printf "v4l2src_pipeline_str:\n$v4l2src_pipeline_str\n\n"
+		 exit 0	
+		 ;;
+	esac
+
+}
 
 kill_darknet()
 {
@@ -77,7 +155,6 @@ loop() {
   #alt for check mem usage
   #pmap 22634 | tail -n 1 | awk '/[0-9]K/{print $2}'
 
-
   autorun=true
 
   last=`date +%s`
@@ -126,7 +203,7 @@ loop() {
   fi
 
   loadavg_1m=$( cat /proc/loadavg | cut -d" " -f1)
-  acceptable_max_cpuload=5
+  acceptable_max_cpuload=7
 
   if (( $(awk 'BEGIN {print ("'$loadavg_1m'" >= "'$acceptable_max_cpuload'")}') )); then
 #  if [ "$acceptable_max_cpuload" -ge "$loadavg_1m" ]; then
@@ -249,11 +326,11 @@ show_device_info()
 
 			sudo nmcli device
 			sudo nmcli con
-			read -n1 -r -p "Press any key to continue..." key
+			pause
 			sudo lsusb 
-			read -n1 -r -p "Press any key to continue..." key
+			pause
 			sudo modem-manager.mmcli -L
-			read -n1 -r -p "Press any key to continue..." key
+			pause
 			sudo mmcli -m $modem_id
 }
 
@@ -262,7 +339,7 @@ show_device_info()
 ###################
 #Show camera selection dialog
 ###################
-show_camera_selection_dialog()
+show_menu_camera_selection()
 {
 
 
@@ -274,9 +351,7 @@ show_camera_selection_dialog()
 
 	for (( i=0; i<${#video_camera_array[@]}; i++ ));
 	do
-		#echo $i
 
-		#echo "${VIDEO_CAMERA_INPUTS[$i,0]}	:: Type: ${VIDEO_CAMERA_INPUTS[$i,2]} :: ${VIDEO_CAMERA_INPUTS[$i,1]} :: ${VIDEO_CAMERA_INPUTS[$i,5]}x${VIDEO_CAMERA_INPUTS[$i,6]} @ ${VIDEO_CAMERA_INPUTS[$i,7]}fps"
 		#echo "Name:	${VIDEO_CAMERA_INPUTS[$i,1]}"
 		#echo "Type:	${VIDEO_CAMERA_INPUTS[$i,2]}"
 		#echo ${VIDEO_CAMERA_INPUTS[$i,3]}
@@ -285,7 +360,6 @@ show_camera_selection_dialog()
 		#echo "Height:	${VIDEO_CAMERA_INPUTS[$i,6]}"
 		#echo "FPS:	${VIDEO_CAMERA_INPUTS[$i,7]}"
 
-		#echo "------------------------";
 		tmp_str="(${VIDEO_CAMERA_INPUTS[$i,2]}) ${VIDEO_CAMERA_INPUTS[$i,5]}x${VIDEO_CAMERA_INPUTS[$i,6]}@${VIDEO_CAMERA_INPUTS[$i,7]}fps - ${VIDEO_CAMERA_INPUTS[$i,1]} "
 
 		dialog_menu+=("${VIDEO_CAMERA_INPUTS[$i,0]}")
@@ -308,31 +382,38 @@ show_camera_selection_dialog()
 
 	camera_num=$(echo $return_str | rev | cut -b -1 )
 
-	#read -n1 -r -p "Press any key to continue..." key
+	#pause
+	build_pipeline
 
 	case $return_str in
 
 		"k")
 			kill_darknet
-			show_camera_selection_dialog
+			show_menu_camera_selection
 		;;
 		
 
 		"q")
+			printf "\nQuit\n"
 			exit 0
 		;;
 		
 		"o")
-			show_advanced_options
+			show_menu_advanced_options
 		;;
 
+		"")
+			printf "\n(Escape key)\n"
+			exit 0
+		;;
+
+
 		*)
-			show_camera_functions
+			show_menu_camera_functions_lv1
 		;;
 
 	esac
 
-	
 
 }
 
@@ -343,7 +424,7 @@ show_camera_selection_dialog()
 ###################
 #Advanced Options menu
 ###################
-show_advanced_options()
+show_menu_advanced_options()
 {
 
 	back_title="Chosen Camera: ${VIDEO_CAMERA_INPUTS[$camera_num,1]} ${VIDEO_CAMERA_INPUTS[$camera_num,0]} ${VIDEO_CAMERA_INPUTS[$camera_num,5]}x${VIDEO_CAMERA_INPUTS[$camera_num,6]}@${VIDEO_CAMERA_INPUTS[$camera_num,7]}fps"
@@ -353,7 +434,7 @@ show_advanced_options()
 	function_selection=$(whiptail --backtitle "${back_title}" \
 										--title "Advanced Options" \
 										--menu "Select the below functions" 25 78 14 \
-										"00" "Toggle Rotate Camera by 180 degree(Current:${nvvidconv_flip})" \
+										"00" "Rotate Camera 180 (Current:${nvvidconv_flip})" \
 										"01" "Kill running darknet interference" \
 										"02" "Toggle FPS(Current: ${framerate})" \
 										"03" "Toggle Power Mode(Current: ${current_power_mode})" \
@@ -384,8 +465,8 @@ show_advanced_options()
 	
 			printf "Rotate camera by 180degree: $nvvidconv_flip\n";
 
-			#read -n1 -r -p "Press any key to continue..." key
-			show_advanced_options
+			#pause
+			
 		;;
 
 
@@ -420,8 +501,7 @@ show_advanced_options()
 	
 			printf "New Framerate: $framerate\n";
 
-			#read -n1 -r -p "Press any key to continue..." key
-			show_advanced_options
+			#pause
 		;;
 
 		03)
@@ -450,10 +530,7 @@ show_advanced_options()
 			sudo nvpmodel -q
 			
 			printf "No of CPU: $(grep -c ^processor /proc/cpuinfo)\n";
-			#read -n1 -r -p "Press any key to continue..." key
-			show_advanced_options
-
-
+			#pause
 		;;
 
 
@@ -467,7 +544,6 @@ show_advanced_options()
 			sudo mmcli -m 0 -e
 			#sudo mmcli -m 0 -r ##hardware pin is broken
 
-
 			mobile_device_name=$(nmcli con show | awk ' /mobile_network/ {print $4}')
 			if [[ $mobile_device_name == "--" && -e $(lsusb | grep Modem) ]]; then
 				lsusb | awk ' /Modem/ {gsub(/:/,""); system("sudo ~/jetson-nano-ai-cam/usbreset /dev/bus/usb/"$2 "/" $4)}'
@@ -478,16 +554,12 @@ show_advanced_options()
 				sudo nmcli con up mobile_network
 				sudo nmcli con mod mobile_network connection.autoconnect yes
 
-
 			else
 				printf "Modem Not found, maybe need to replug or maybe you need reboot\n"
 			fi
 
-			read -n1 -r -p "Press any key to continue..." key
-			show_advanced_options
+			pause
 		;;
-
-
 
 		06)
 			clear
@@ -501,16 +573,14 @@ show_advanced_options()
 				#sudo python3 ~/jetson-nano-ai-cam/show.py "Will send to server"
 			fi
 
-			read -n1 -r -p "Press any key to continue..." key
-			show_advanced_options
+			pause
 		;;
 
 		07)
 			clear
 			sudo nmtui 
 
-			read -n1 -r -p "Press any key to continue..." key
-			show_advanced_options
+			pause
 		;;
 
 
@@ -520,9 +590,7 @@ show_advanced_options()
 	
 			printf "systemctl restart nvargus-daemon\n";
 
-			read -n1 -r -p "Press any key to continue..." key
-			show_advanced_options
-
+			pause
 		;;
 
 		09)
@@ -535,8 +603,7 @@ show_advanced_options()
 
 			printf "ngrok restarted\n";
 
-			read -n1 -r -p "Press any key to continue..." key
-			show_advanced_options
+			pause
 		;;
 
 
@@ -546,8 +613,7 @@ show_advanced_options()
 			## need to use full path
 			~/jetson-nano-ai-cam/send_http.sh "Test from: $myIPAddress" "$PWD/demo-jetson-nano.jpg";
 
-			read -n1 -r -p "Press any key to continue..." key
-			show_advanced_options
+			pause
 		;;
 
 
@@ -556,7 +622,7 @@ show_advanced_options()
 			clear
 
 			show_device_info
-			read -n1 -r -p "Press any key to continue..." key
+			pause
 
 			#sudo modem-manager.mmcli -m 2
 
@@ -566,8 +632,7 @@ show_advanced_options()
 			sudo python3 info.py
 			printf "Screen updated\n";
 			
-			read -n1 -r -p "Press any key to continue..." key
-			show_advanced_options
+			pause
 		;;
 
 
@@ -577,9 +642,7 @@ show_advanced_options()
 
 			for d in /dev/video* ; do echo $d ; v4l2-ctl --device=$d -D --list-formats-ext  ; echo '===============' ; done
 
-			read -n1 -r -p "Press any key to continue..." key
-			show_advanced_options
-
+			pause
 		;;
 
 
@@ -588,7 +651,8 @@ show_advanced_options()
 			printf "Reboot in 2s\n";
 			sleep 2
 			sudo systemctl reboot -i
-			read -n1 -r -p "Press any key to continue..." key
+			pause
+			exit 0
 		;;
 
 		14)
@@ -596,7 +660,8 @@ show_advanced_options()
 			printf "Shutdown in 3s\n";
 			sleep 3
 			sudo systemctl poweroff -i
-			read -n1 -r -p "Press any key to continue..." key
+			pause
+			exit 0
 		;;
 
 
@@ -608,176 +673,78 @@ show_advanced_options()
 		*)
 			clear
 			select_function=-1
-
+			
 		;;
 	esac
 
-	show_camera_selection_dialog
+	show_menu_camera_selection
 
 }
 
 
 
 ###################
-#Camera functions 
+#Camera functions level
 ###################
-show_camera_functions()
+show_menu_camera_functions_lv1()
 {
 
 	##just kill in case it is running
 	kill_darknet_slient
-
-	build_pipeline
 
 	back_title="Chosen Camera: ${VIDEO_CAMERA_INPUTS[$camera_num,1]} ${VIDEO_CAMERA_INPUTS[$camera_num,0]} ${VIDEO_CAMERA_INPUTS[$camera_num,5]}x${VIDEO_CAMERA_INPUTS[$camera_num,6]}@${VIDEO_CAMERA_INPUTS[$camera_num,7]}fps"
 
 	function_selection=$(whiptail --backtitle "${back_title}" \
 										--title "Camera Function" \
 										--menu "Select the below functions" 25 78 14 \
-										"01" "Police Detection (MJPG http://${myIPAddress}:8090)" \
-										"02" "Police Detection (Require GUI X11)" \
-										"03" "Face Mask Detection (MJPG http://${myIPAddress}:8090)" \
-										"04" "Face Mask Detection (Require GUI X11)" \
-										"05" "80 objects Detection (MJPG http://${myIPAddress}:8090)" \
-										"06" "80 objects Detection (Require GUI X11)" \
-										"07" "Show camera on HDMI output" \
-										"08" "Display Device details" \
+										"01" "Yolo V3 Detection Selection" \
+										"02" "retinaface - show faces" \
+										"03" "light numan pose" \
+										"04" "tf-pose-estimation" \
+										"05" "trt-pose" \
+										"06" "Show camera on HDMI output" \
+										"07" "Record video to mp4" \
+										"08" "Live Low latency WebRTC" \
 										"09" "Advanced Options" \
 										"10" "Reboot" \
 										"11" "Shutdown" 3>&1 1>&2 2>&3)
 
 	case $function_selection in
-		$'\e') 
-			printf "\n\nEXIT \n\n"
+		"") 
+			printf "\n(Escape key)\n"
+			clear
+			show_menu_camera_selection
 			exit 0
 		;;
 
 		01)
 			clear
-			echo "01 ${VIDEO_CAMERA_INPUTS[$camera_num,2]} $darknet_police_str"
-		
+			echo "Yolo V3 Inference"
+			show_menu_yolov3_detection_options
 
-			#needto remove nvjpeg
-			#v4l2src_pipeline_str=${v4l2src_pipeline_str//nvjpegdec/jpegdec}
-
-			v4l2src_pipeline_str=${v4l2src_pipeline_str//\'/''} ##remove the ' for nvarguscamerasrc
-
-			case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
-				"RG10")
-
-#old-if doesn't work
-#execute_str="$darknet_police_str \"$v4l2src_pipeline_str -e\" -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 &"
-
-execute_str=$(cat <<EOF
-nohup $darknet_police_str "$v4l2src_pipeline_str -e" -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 &
-| 
-gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' &>/dev/null &
-EOF
-)
-				;;
-
-				*)
-
-
-echo $v4l2src_pipeline_str
-
-					#execute_str="$darknet_police_str -c $camera_num -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070"
-
-##Basic version
-#execute_str=$(cat <<EOF
-#nohup $darknet_police_str -c $camera_num -thresh 0.03 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 
-#EOF
-
-
-##output string
-##execute_str=$(cat <<EOF
-##$darknet_police_str -c $camera_num -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
-##gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' &
-##EOF
-
-
-##redirect stdout to null
-
-execute_str=$(cat <<EOF
-nohup $darknet_police_str "$v4l2src_pipeline_str" -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
-gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} '  &
-EOF
-)
-#1>&2
-#&>/dev/null &
-
-
-
-				;;
-			esac
-
-echo $execute_str
-
-			printf "\nDebug: $execute_str\n"
-			cd ~/darknet
-			eval $execute_str
-			sudo pgrep darknet
-			read -n1 -r -p "Press any key to continue..." key
-		;;		
-
+		;;
 
 		02)
 			clear
-			cd ~/darknet
+			echo "retinaface - show faces"
+		;;
 
-			#needto remove nvjpeg
-			#v4l2src_pipeline_str=${v4l2src_pipeline_str//nvjpegdec/jpegdec}
+		03)
+			clear
+			echo "light numan pose"
+		;;
 
-			v4l2src_pipeline_str=${v4l2src_pipeline_str//\'/''} ##remove the ' for nvarguscamerasrc
+		04)
+			clear
+			echo "tf-pose-estimation"
+		;;
 
-			case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
-				"RG10")
+		05)
+			clear
+			echo "trt-pose"
+		;;
 
-#old-if doesn't work
-#execute_str="$darknet_police_str \"$v4l2src_pipeline_str -e\" -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 &"
-
-execute_str=$(cat <<EOF
-$darknet_police_str "$v4l2src_pipeline_str -e" -thresh 0.02 
-EOF
-				;;
-				*)
-
-					#execute_str="$darknet_police_str -c $camera_num -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070"
-
-##Basic version
-#execute_str=$(cat <<EOF
-#nohup $darknet_police_str -c $camera_num -thresh 0.03 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 
-#EOF
-
-
-##output string
-##execute_str=$(cat <<EOF
-##$darknet_police_str -c $camera_num -thresh 0.02 -dont_show -prefix ~/images/d$today -mjpeg_port 8090 -json_port 8070 | 
-##gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' &
-##EOF
-
-
-##redirect stdout to null
-execute_str=$(cat <<EOF
-$darknet_police_str -c $camera_num -thresh 0.02 
-EOF
-
-
-)
-
-				;;
-			esac
-
-			printf "\nDebug: $execute_str\n"
-			eval $execute_str
-			sudo pgrep darknet
-			read -n1 -r -p "Press any key to continue..." key
-		;;	
-
-
-
-
-		07)
+		06)
 			clear
 			##nvoverlaysink	##fullscreen, fast
 			##nveglglessink	##non fullscreen, slow
@@ -823,8 +790,13 @@ EOF
 	
 			eval $execute_str
 
-			read -n1 -r -p "Press any key to continue..." key
+			pause
 
+		;;
+
+
+		07)
+			clear
 		;;
 
 
@@ -838,7 +810,7 @@ EOF
 
 
 		09)
-			show_advanced_options
+			show_menu_advanced_options
 		;;
 
 		10)
@@ -846,7 +818,7 @@ EOF
 			printf "Reboot in 2s\n";
 			sleep 2
 			sudo systemctl reboot -i
-			read -n1 -r -p "Press any key to continue..." key
+			pause
 
 		;;
 
@@ -855,10 +827,115 @@ EOF
 			printf "Shutdown in 3s\n";
 			sleep 3
 			sudo systemctl poweroff -i
-			read -n1 -r -p "Press any key to continue..." key
+			pause
 		;;
 
-	esac	
+		*)
+		;;
+
+	esac
+
+	exit 0
+}
+
+
+###################
+#Yolo v3 different detection options
+###################
+show_menu_yolov3_detection_options()
+{
+
+
+	back_title="Chosen Camera: ${VIDEO_CAMERA_INPUTS[$camera_num,1]} ${VIDEO_CAMERA_INPUTS[$camera_num,0]} ${VIDEO_CAMERA_INPUTS[$camera_num,5]}x${VIDEO_CAMERA_INPUTS[$camera_num,6]}@${VIDEO_CAMERA_INPUTS[$camera_num,7]}fps"
+
+	unset dialog_menu
+	dialog_menu=()
+
+	#length of a dimension cannot be known, total array divid by 6 columns
+	no_rows=${#yolo_detection_options[@]}/5
+	for (( i=0; i<$no_rows; i++ ));
+	do
+		dialog_menu+=("${i}")
+		dialog_menu+=("${yolo_detection_options[$i,0]}")
+	done
+
+
+	function_selection=$(whiptail --backtitle "${back_title}" \
+										--title "Select Dataset for YoloV3" \
+										--menu "Select Below are dataset to try out" 25 78 14 \
+										"${dialog_menu[@]}" 3>&1 1>&2 2>&3)
+
+	clear
+	printf "v4l2src_pipeline_str:\n$v4l2src_pipeline_str\n\n"
+
+	if [ "$function_selection" == "" ]; then
+			show_menu_camera_functions_lv1
+			#printf "\n\nEXIT \n\n"
+			#exit 0		
+	fi
+	
+	echo "$function_selection ${yolo_detection_options[$function_selection,0]}  "
+
+	case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
+		"RG10")
+			#needto remove nvjpeg
+			#v4l2src_pipeline_str=${v4l2src_pipeline_str//nvjpegdec/jpegdec}
+			v4l2src_pipeline_str=${v4l2src_pipeline_str//\'/''} ##remove the ' for nvarguscamerasrc
+		;;
+	esac
+
+	yolo_exec_str="./darknet detector demo "
+
+	##output string
+	##execute_str=$(cat <<EOF
+	##$yolo_exec_str -c $camera_num ${yolo_detection_options[$function_selection,1]} ${yolo_detection_options[$function_selection,2]} ${yolo_detection_options[$function_selection,3]}  | 
+	##gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' &
+	##EOF
+
+	##redirect stdout to null
+
+
+
+execute_str=$(cat <<EOF
+ $yolo_exec_str \
+  ${yolo_detection_options[$function_selection,1]} \
+  ${yolo_detection_options[$function_selection,2]} \
+  ${yolo_detection_options[$function_selection,3]} \
+  ${yolo_detection_options[$function_selection,4]} \
+  '$v4l2src_pipeline_str' \
+  | gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} '
+EOF
+)
+	#1>&2
+	#&>/dev/null &
+
+	if (whiptail --title "Launch in interactive mode?" --yesno "Launching in debug mode or no to start background." 8 78); then
+			#execute_str="nohup $execute_str &"
+			echo ""
+	else
+			execute_str="nohup $execute_str &"
+	fi
+
+	printf "\nDebug:\n$execute_str\n\n"
+	pause
+
+	echo "$v4l2src_pipeline_str" >> ~/jetson-nano-ai-cam/launch.log
+	echo "" >> ~/jetson-nano-ai-cam/launch.log
+	echo "$execute_str" >> ~/jetson-nano-ai-cam/launch.log
+	echo "" >> ~/jetson-nano-ai-cam/launch.log
+
+	darknet_pid=$(pgrep darknet)
+	sudo pgrep darknet
+
+	echo "$darknet_pid" >> ~/jetson-nano-ai-cam/launch.log
+
+	echo "**********************" >> ~/jetson-nano-ai-cam/launch.log
+	echo "" >> ~/jetson-nano-ai-cam/launch.log
+
+	cd ~/darknet	
+	eval $execute_str
+
+	pause
 
 
 }
@@ -870,86 +947,88 @@ EOF
 build_pipeline()
 {
 
-#darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg backup/samson-yolov3-tiny_final.weights "
 
-#darknet_police_str="./darknet detector demo ./cfg/samson-obj.data ./cfg/samson-yolov3-tiny.cfg ../../trained-weight/police2020/samson-yolov3-tiny_final.weights "
-
-darknet_police_str="./darknet detector demo ~/trained-weight/police2020/samson-obj.data ~/trained-weight/police2020/samson-yolov3-tiny.cfg ~/trained-weight/police2020/samson-yolov3-tiny_final.weights "
+	v4l2src_pipeline_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! "
 
 
-darknet_mask_str="./darknet detector demo ~/trained-weight/mask2020/samson-obj.data ~/trained-weight/mask2020/samson-mask-yolov3-tiny.cfg ~/trained-weight/mask2020/samson-mask-yolov3-tiny_final.weights "
+	case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
+
+		"YUYV")
+			v4l2src_pipeline_str+="video/x-raw, format=YUY2, "
+		;;
+
+		"MJPG")
+			v4l2src_pipeline_str+="image/jpeg, "
+		;;
+
+		"H264")
+			v4l2src_pipeline_str+="video/x-h264, "
+		;;	
+
+	esac
 
 
-darknet_coco_str="./darknet detector demo ./cfg/coco.data ./cfg/yolov3-tiny.cfg ./yolov3-tiny.weights "
+	v4l2src_pipeline_str+="width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! "
 
-v4l2src_pipeline_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! "
-
-
-case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
-
-	"YUYV")
-		v4l2src_pipeline_str+="video/x-raw, format=YUY2, "
-	;;
-
-	"MJPG")
-		v4l2src_pipeline_str+="image/jpeg, "
-	;;
-
-	"H264")
-		v4l2src_pipeline_str+="video/x-h264, "
-	;;	
-
-esac
+	case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
 
 
-v4l2src_pipeline_str+="width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! "
+		"RG10")
+			#onboard camera completely different
+			v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1600, height=(int)1200, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! 'video/x-raw, format=(string)BGRx' ! videoconvert ! 'video/x-raw, format=(string)BGR' ! "
+			#v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1640, height=(int)1232, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! 'video/x-raw, format=(string)BGRx' ! videoconvert ! 'video/x-raw, format=(string)BGR' ! tee name=t  t. !"
+		;;
 
-case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
+		"YUYV")
 
+			if [[ $nvvidconv_flip == "flip-method=2 " ]]; then
+				v4l2src_pipeline_str+=" videoflip video-direction=2 ! "
+			fi
+			
+			#v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=I420 ! "
+			v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=BGR ! "
+		;;
 
-	"RG10")
-		#onboard camera completely different
-		v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1600, height=(int)1200, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! 'video/x-raw, format=(string)BGRx' ! videoconvert ! 'video/x-raw, format=(string)BGR' ! "
-		#v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1640, height=(int)1232, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! 'video/x-raw, format=(string)BGRx' ! videoconvert ! 'video/x-raw, format=(string)BGR' ! tee name=t  t. !"
-	;;
+		"MJPG")
 
-	"YUYV")
+			if [[ $nvvidconv_flip == "flip-method=2 " ]]; then
+				v4l2src_pipeline_str+=" videoflip video-direction=2 ! "
+			fi
+
+			##jpegdec > nvjpegdec
 		
-		v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=I420 ! "
-	;;
+			## working with nvoverlay, not yolo
+			#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)RGBA' ! "
 
-	"MJPG")
-		##jpegdec > nvjpegdec
-	
-		## working with nvoverlay, not yolo
-		#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)RGBA' ! "
+			#works for display only
+			#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! "
 
-		#works for display only
-		#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! "
+			#opencv expects BGR
+			v4l2src_pipeline_str+="jpegparse ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! video/x-raw,format=(string)BGR ! "
+		;;
 
-		#opencv expects BGR
-		v4l2src_pipeline_str+="jpegparse ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! video/x-raw,format=(string)BGR ! "
-	;;
+		"H264")
+			# Jetson Nano    enable-low-outbuffer=1 
+			# Jetson Nano max perf   disable-dvfs=1
+			v4l2src_pipeline_str+="omxh264dec enable-low-outbuffer=1  disable-dvfs=1 ! "
 
-	"H264")
-		# Jetson Nano    enable-low-outbuffer=1 
-		# Jetson Nano max perf   disable-dvfs=1
-		v4l2src_pipeline_str+="omxh264dec enable-low-outbuffer=1  disable-dvfs=1 ! videoconvert ! "
-		#v4l2src_pipeline_str+="nvv4l2decoder ! "
-	;;	
+			if [[ $nvvidconv_flip == "flip-method=2 " ]]; then
+				v4l2src_pipeline_str+=" videoflip video-direction=2 ! "
+			fi
+			
+			v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=BGR ! "
+			#v4l2src_pipeline_str+="nvv4l2decoder ! "
+		;;	
 
-esac
+	esac
 
-#v4l2src_pipeline_str+=" tee name=t t. ! nvvidconv ! omxh264enc control-rate=2  bitrate=6000000 peak-bitrate=6500000  preset-level=2 profile=8 !  'video/x-h264, stream-format=(string)byte-stream, level=(string)5.2' ! h264parse ! qtmux ! filesink location=/mnt/sandisk/$today.mov t. ! "
+	#v4l2src_pipeline_str+=" tee name=t t. ! nvvidconv ! omxh264enc control-rate=2  bitrate=6000000 peak-bitrate=6500000  preset-level=2 profile=8 !  'video/x-h264, stream-format=(string)byte-stream, level=(string)5.2' ! h264parse ! qtmux ! filesink location=/mnt/sandisk/$today.mov t. ! "
 
 
-v4l2src_pipeline_str+=" appsink sync=false async=false "
+	v4l2src_pipeline_str+=" appsink sync=false async=false "
 
-#printf "$v4l2src_pipeline_str\n\n";
+	#printf "$v4l2src_pipeline_str\n\n";
 
-darknet_exe_str+=" \"$v4l2src_pipeline_str\" "
-
-execute_str=""
 
 }
 
@@ -1000,8 +1079,7 @@ fi
 
 
 
-#today=`date +%Y-%m-%d.%H:%M:%S`
-today=`date +%Y%m%d-%H%M%S`
+
 
 shopt -s nullglob
 video_camera_array=(/dev/video*)
@@ -1037,7 +1115,7 @@ fi
 #########----GET camera basic info
 
 
-echo "Found devices ============================";
+#echo "Found devices ============================";
 #echo "${video_camera_array[@]}"
 
 this_device_id="nothing"
@@ -1111,7 +1189,7 @@ do
 
 	##echo "Sorted array: ${sorted_array[*]}"
 
-	VIDEO_CAMERA_INPUTS[$i,4]="${sorted_array[-1]}" ##THE hight resolution the cam can do
+	VIDEO_CAMERA_INPUTS[$i,4]="${sorted_array[-1]}" ##THE highest resolution the cam can do
 
 	selected_width=0
 	selected_height=0
@@ -1121,6 +1199,9 @@ do
 	this_fps_string="$( v4l2-ctl --device=${VIDEO_CAMERA_INPUTS[$i,0]} --list-frameintervals=width=1920,height=1080,pixelformat=${VIDEO_CAMERA_INPUTS[$i,2]} )"
 
 	#printf  "$this_fps_string"
+
+	#Init assume 15fps
+	framerate=15
 
 	#detect if 60fps is supported
 	if [[ $this_fps_string ==  *"60.000 fps"* ]]; then
@@ -1139,10 +1220,6 @@ do
 		selected_height=1080
 	fi
 
-	#force 30fps
-	framerate=30
-
-
 
 	##skip test if 1920x1080 works
 	if [[ $selected_width == "0" ]]; then
@@ -1151,7 +1228,7 @@ do
 		for ((j=${#sorted_array[@]}-1; j>=0; j-- ));
 		do
 			this_res="${sorted_array[$j]}"
-			#printf  "\n[$j) $this_res]: "
+			printf  "\n[$j) $this_res]: "
 			this_width=$( printf ${this_res} | cut -d 'x' -f 1 ) 
 			this_height=$( printf ${this_res} | cut -d 'x' -f 2 ) 
 
@@ -1164,13 +1241,20 @@ do
 
 			##printf  "$this_fps_string"
 
+			#Init assume 15fps
+			framerate=15
+
+			#detect if 60fps is supported
+			if [[ $this_fps_string ==  *"60.000 fps"* ]]; then
+				framerate=60
+				break
+			fi
+
+
+			#if 30fps is supported, force it
 			if [[ $this_fps_string ==  *"30.000 fps"* ]]; then
-				#printf "yes\n"
 				framerate=30
-				break	##break loop, as it is supported, not need find another one
-			else
-				#if it cannot find 30fps, it will revert to 5fps, just incase		
-				framerate=5
+				break
 			fi
 
 		done
@@ -1212,12 +1296,12 @@ if $autorun; then
 else
 	#old# read -p "[0-${end_num}]: " -n1 camera_num	
 
-	show_camera_selection_dialog
+	show_menu_camera_selection
 
 fi
 
 function_selection=""
-#show_advanced_options
+#show_menu_advanced_options
 
 function_selection=1
 
@@ -1245,7 +1329,7 @@ if [[ ! -d ~/images ]]; then
   mkdir -p ~/images;
 fi
 
-show_camera_functions
+show_menu_camera_functions_lv1
 
 
 
@@ -1266,7 +1350,12 @@ runInterval=5 # In seconds
 #nohup loop &>/dev/null &
 
 
-#eval $darknet_police_str
+#eval $yolo_exec_str
 
 #nohup command &>/dev/null &
+
+
+echo $v4l2src_pipeline_str > ~/jetson-nano-ai-cam/last_run_pipeline.txt
+
+
 display_usage_help
