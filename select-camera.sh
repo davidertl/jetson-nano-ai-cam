@@ -41,10 +41,10 @@ yolo_detection_options[3,2]="${yolo_detection_options[2,2]}" ##same
 yolo_detection_options[3,3]="${yolo_detection_options[2,3]}" ##same
 yolo_detection_options[3,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[2,4]}" 
 
-yolo_detection_options[4,0]="HK Police (Require GUI X11)"
+yolo_detection_options[4,0]="HK Police 512+(Require GUI X11)"
 yolo_detection_options[4,1]="~/trained-weight/police2020/obj.edge.data"
-yolo_detection_options[4,2]="~/trained-weight/police2020/yolov3-tiny.cfg"
-yolo_detection_options[4,3]="~/trained-weight/police2020/yolov3-tiny.weights"
+yolo_detection_options[4,2]="~/trained-weight/police2020/yolov3-tiny-512-rotate-40.cfg"
+yolo_detection_options[4,3]="~/trained-weight/police2020/yolov3-tiny-512-rotate-40-more_var.weights"
 yolo_detection_options[4,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
 
 yolo_detection_options[5,0]="HK Police (http://${myIPAddress}:8090)"

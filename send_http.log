@@ -3240,3 +3240,39 @@ Success <br />
 Success <br />
 <b>Notice</b>: Undefined property: stdClass::$url in <b>/var/www/html/mail2you.net/jetson-nano/server/php/index.php</b> on line <b>122</b><br />
 {"error":" WA session for '85268079318' is not connected with waboxapp right now"}
+2020-04-10.05.04.33: curl -s -X POST -H 'Content-Type: multipart/form-data' 	-F 'gps=0.0,0.0' 	-F 'detected_object=police_yellow_vest 25%,police_blue_uniform_short 65%,police_blue_uniform_short 30%,police_blue_uniform_short 21%,police_blue_uniform_short 19' 	-F 'app_id=1234' 	-F 'app_token=42134' 	-F 'files=@/home/jetsonnano/images/d20200410-050334_0000000500.jpg' 	-F 'simple_form=1' https://jetson-nano.mail2you.net/server/php/index.php >> ~/jetson-nano-ai-cam/send_http.log:/home/jetsonnano/jetson-nano-ai-cam/send_http.sh
+<br />
+<b>Notice</b>: Trying to access array offset on value of type null in <b>/var/www/html/mail2you.net/jetson-nano/server/php/UploadHandler.php</b> on line <b>500</b><br />
+Success <br />
+<b>Notice</b>: Undefined property: stdClass::$url in <b>/var/www/html/mail2you.net/jetson-nano/server/php/index.php</b> on line <b>122</b><br />
+{"error":" WA session for '85268079318' is not connected with waboxapp right now"}
+2020-04-10.05.04.42: curl -s -X POST -H 'Content-Type: multipart/form-data' 	-F 'gps=0.0,0.0' 	-F 'detected_object=police_green_uniform_no_helmet 41' 	-F 'app_id=1234' 	-F 'app_token=42134' 	-F 'files=@/home/jetsonnano/images/d20200410-050334_0000000623.jpg' 	-F 'simple_form=1' https://jetson-nano.mail2you.net/server/php/index.php >> ~/jetson-nano-ai-cam/send_http.log:/home/jetsonnano/jetson-nano-ai-cam/send_http.sh
+<br />
+<b>Notice</b>: Trying to access array offset on value of type null in <b>/var/www/html/mail2you.net/jetson-nano/server/php/UploadHandler.php</b> on line <b>500</b><br />
+Success <br />
+<b>Notice</b>: Undefined property: stdClass::$url in <b>/var/www/html/mail2you.net/jetson-nano/server/php/index.php</b> on line <b>122</b><br />
+{"error":" WA session for '85268079318' is not connected with waboxapp right now"}
+2020-04-10.05.04.53: curl -s -X POST -H 'Content-Type: multipart/form-data' 	-F 'gps=0.0,0.0' 	-F 'detected_object=police_green_uniform_full_gear 61%,police_green_uniform_full_gear 23%,police_blue_uniform_short 53%,police_blue_uniform_short 42%,police_blue_uniform_short 23' 	-F 'app_id=1234' 	-F 'app_token=42134' 	-F 'files=@/home/jetsonnano/images/d20200410-050334_0000000743.jpg' 	-F 'simple_form=1' https://jetson-nano.mail2you.net/server/php/index.php >> ~/jetson-nano-ai-cam/send_http.log:/home/jetsonnano/jetson-nano-ai-cam/send_http.sh
+<br />
+<b>Notice</b>: Trying to access array offset on value of type null in <b>/var/www/html/mail2you.net/jetson-nano/server/php/UploadHandler.php</b> on line <b>500</b><br />
+Success <br />
+<b>Notice</b>: Undefined property: stdClass::$url in <b>/var/www/html/mail2you.net/jetson-nano/server/php/index.php</b> on line <b>122</b><br />
+{"error":" WA session for '85268079318' is not connected with waboxapp right now"}
+2020-04-10.05.05.02: curl -s -X POST -H 'Content-Type: multipart/form-data' 	-F 'gps=0.0,0.0' 	-F 'detected_object=police_green_uniform_full_gear 59%,police_green_uniform_full_gear 55' 	-F 'app_id=1234' 	-F 'app_token=42134' 	-F 'files=@/home/jetsonnano/images/d20200410-050334_0000000863.jpg' 	-F 'simple_form=1' https://jetson-nano.mail2you.net/server/php/index.php >> ~/jetson-nano-ai-cam/send_http.log:/home/jetsonnano/jetson-nano-ai-cam/send_http.sh
+<br />
+<b>Notice</b>: Trying to access array offset on value of type null in <b>/var/www/html/mail2you.net/jetson-nano/server/php/UploadHandler.php</b> on line <b>500</b><br />
+Success <br />
+<b>Notice</b>: Undefined property: stdClass::$url in <b>/var/www/html/mail2you.net/jetson-nano/server/php/index.php</b> on line <b>122</b><br />
+{"error":" WA session for '85268079318' is not connected with waboxapp right now"}
+2020-04-10.05.05.13: curl -s -X POST -H 'Content-Type: multipart/form-data' 	-F 'gps=0.0,0.0' 	-F 'detected_object=police_green_uniform_full_gear 61%,police_green_uniform_full_gear 44' 	-F 'app_id=1234' 	-F 'app_token=42134' 	-F 'files=@/home/jetsonnano/images/d20200410-050334_0000000983.jpg' 	-F 'simple_form=1' https://jetson-nano.mail2you.net/server/php/index.php >> ~/jetson-nano-ai-cam/send_http.log:/home/jetsonnano/jetson-nano-ai-cam/send_http.sh
+<br />
+<b>Notice</b>: Trying to access array offset on value of type null in <b>/var/www/html/mail2you.net/jetson-nano/server/php/UploadHandler.php</b> on line <b>500</b><br />
+Success <br />
+<b>Notice</b>: Undefined property: stdClass::$url in <b>/var/www/html/mail2you.net/jetson-nano/server/php/index.php</b> on line <b>122</b><br />
+{"error":" WA session for '85268079318' is not connected with waboxapp right now"}
+2020-04-10.05.05.23: curl -s -X POST -H 'Content-Type: multipart/form-data' 	-F 'gps=0.0,0.0' 	-F 'detected_object=police_green_uniform_full_gear 61%,police_green_uniform_full_gear 44' 	-F 'app_id=1234' 	-F 'app_token=42134' 	-F 'files=@/home/jetsonnano/images/d20200410-050334_0000001103.jpg' 	-F 'simple_form=1' https://jetson-nano.mail2you.net/server/php/index.php >> ~/jetson-nano-ai-cam/send_http.log:/home/jetsonnano/jetson-nano-ai-cam/send_http.sh
+<br />
+<b>Notice</b>: Trying to access array offset on value of type null in <b>/var/www/html/mail2you.net/jetson-nano/server/php/UploadHandler.php</b> on line <b>500</b><br />
+Success <br />
+<b>Notice</b>: Undefined property: stdClass::$url in <b>/var/www/html/mail2you.net/jetson-nano/server/php/index.php</b> on line <b>122</b><br />
+{"error":" WA session for '85268079318' is not connected with waboxapp right now"}
