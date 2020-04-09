@@ -12,6 +12,7 @@ echo 255 | sudo tee /sys/devices/pwm-fan/target_pwm
 
 v4l2src_pipeline_str=""
 nvvidconv_flip=""
+resize_to_resolution="N/A"
 
 #today=`date +%Y-%m-%d.%H:%M:%S`
 today=`date +%Y%m%d-%H%M%S`
@@ -435,7 +436,7 @@ show_menu_advanced_options()
 										--title "Advanced Options" \
 										--menu "Select the below functions" 25 78 14 \
 										"00" "Rotate Camera 180 (Current:${nvvidconv_flip})" \
-										"01" "Kill running darknet interference" \
+										"01" "Resize the source (Current:${resize_to_resolution})" \
 										"02" "Toggle FPS(Current: ${framerate})" \
 										"03" "Toggle Power Mode(Current: ${current_power_mode})" \
 										"04" "Reset Jetson Hotspot" \
@@ -473,22 +474,18 @@ show_menu_advanced_options()
 
 		01)
 			clear
-			if [[ $(sudo pgrep darknet) == "" ]]; then
-				printf "Darknet process Not found\n";
-				#sudo python3 ~/jetson-nano-ai-cam/show.py "Darknet not found"
-			else
-				kill_darknet
-				#sudo python3 ~/jetson-nano-ai-cam/show.py "Darknet killed"
-				printf "All darknet process killed\n";
-			fi
-
-
-			#don't loop if if from para
-			#if ! $quit_darknet ; then
-			#	continue
-			#else
-			#	exit 0;
-			#fi
+			case $resize_to_resolution in
+				"N/A")
+					resize_to_resolution="1280x720"
+				;;
+				"1280x720")
+					resize_to_resolution="640x360"
+				;;
+				"640x360")
+					resize_to_resolution="N/A"
+				;;
+			esac
+			show_menu_advanced_options
 		;;
 
 		02)
@@ -497,10 +494,9 @@ show_menu_advanced_options()
 				framerate=10
 			else	
 				framerate=30
-			fi
-	
+			fi	
 			printf "New Framerate: $framerate\n";
-
+			show_menu_advanced_options
 			#pause
 		;;
 
@@ -531,6 +527,7 @@ show_menu_advanced_options()
 			
 			printf "No of CPU: $(grep -c ^processor /proc/cpuinfo)\n";
 			#pause
+			show_menu_advanced_options
 		;;
 
 
@@ -574,6 +571,7 @@ show_menu_advanced_options()
 			fi
 
 			pause
+			show_menu_advanced_options
 		;;
 
 		07)
@@ -701,15 +699,17 @@ show_menu_camera_functions_lv1()
 										"02" "retinaface_pt - trt_cc show faces (fullscreen)" \
 										"03" "mtcnn_facenet" \
 										"04" "MTCNN_FaceDectection_TensorRT (doesn't work)" \
-										"05" "tf-pose-estimation (a few mins to build engine)" \
+										"05" "jkjung-avt MTCNN TensorRT ('F' fullscreen, esc quit)" \
+										"06" "tf-pose-estimation (a few mins to build engine)" \
 										"06" "trt-pose" \
 										"07" "Show camera on HDMI output" \
 										"08" "Record video to mp4" \
 										"09" "Live Low latency WebRTC" \
 										"10" "OpenDataCam" \
-										"12" "Advanced Options" \
-										"13" "Reboot" \
-										"14" "Shutdown" 3>&1 1>&2 2>&3)
+										"20" "Show camera on HDMI output" \
+										"21" "Advanced Options" \
+										"22" "Reboot" \
+										"23" "Shutdown" 3>&1 1>&2 2>&3)
 
 	case $function_selection in
 		"") 
@@ -760,9 +760,20 @@ show_menu_camera_functions_lv1()
 			eval $execute_str
 		;;
 
-
-
 		05)
+			clear
+			echo "jkjung-avt MTCNN TensorRT"
+			execute_str="python3 trt_mtcnn.py --v4l2 '$v4l2src_pipeline_str'"
+			printf "\nDebug: $execute_str\n"
+			cd ~/jkjung-avt/tensorrt_demos
+			eval $execute_str
+		;;
+
+
+
+
+
+		09)
 			clear
 			echo "tf-pose-estimation"
 			execute_str="python3 run_webcam.py --video='$v4l2src_pipeline_str' --model=mobilenet_v2_small --resize=432x368 --tensorrt=True --showBG=False"
@@ -771,12 +782,12 @@ show_menu_camera_functions_lv1()
 			eval $execute_str
 		;;
 
-		06)
+		10)
 			clear
 			echo "trt-pose"
 		;;
 
-		07)
+		20)
 			clear
 			##nvoverlaysink	##fullscreen, fast
 			##nveglglessink	##non fullscreen, slow
@@ -816,7 +827,6 @@ show_menu_camera_functions_lv1()
 			esac
 
 		
-		
 			#execute_str="gst-launch-1.0 $v4l2src_display_str -e"
 			printf "\nDebug: $execute_str\n"
 	
@@ -827,25 +837,11 @@ show_menu_camera_functions_lv1()
 		;;
 
 
-		08)
-			clear
-		;;
-
-
-		08)
-			clear
-			execute_str="v4l2-ctl --device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} --list-formats-ext --all"
-			printf "\nDebug: $execute_str\n"
-			eval $execute_str
-
-		;;
-
-
-		12)
+		21)
 			show_menu_advanced_options
 		;;
 
-		13)
+		22)
 			clear
 			printf "Reboot in 2s\n";
 			sleep 2
@@ -854,7 +850,7 @@ show_menu_camera_functions_lv1()
 
 		;;
 
-		14)
+		23)
 			clear
 			printf "Shutdown in 3s\n";
 			sleep 3
@@ -1013,15 +1009,33 @@ build_pipeline()
 
 		"YUYV")
 
+			case $resize_to_resolution in
+				"1280x720")
+					v4l2src_pipeline_str+="videoscale method=1 sharpen=1 ! video/x-raw, width=1280, height=720 ! "
+				;;
+				"640x360")
+					v4l2src_pipeline_str+="videoscale method=1 sharpen=1 ! video/x-raw, width=640, height=360 ! "
+				;;
+			esac
+
 			if [[ $nvvidconv_flip == "flip-method=2 " ]]; then
 				v4l2src_pipeline_str+=" videoflip video-direction=2 ! "
-			fi
+			fi			
 			
 			#v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=I420 ! "
 			v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=BGR ! "
 		;;
 
 		"MJPG")
+
+			case $resize_to_resolution in
+				"1280x720")
+					v4l2src_pipeline_str+="videoscale method=1 sharpen=1 ! video/x-raw, width=1280, height=720 ! "
+				;;
+				"640x360")
+					v4l2src_pipeline_str+="videoscale method=1 sharpen=1 ! video/x-raw, width=640, height=360 ! "
+				;;
+			esac
 
 			if [[ $nvvidconv_flip == "flip-method=2 " ]]; then
 				v4l2src_pipeline_str+=" videoflip video-direction=2 ! "
@@ -1042,7 +1056,16 @@ build_pipeline()
 		"H264")
 			# Jetson Nano    enable-low-outbuffer=1 
 			# Jetson Nano max perf   disable-dvfs=1
-			v4l2src_pipeline_str+="omxh264dec enable-low-outbuffer=1  disable-dvfs=1 ! "
+			v4l2src_pipeline_str+="omxh264dec enable-low-outbuffer=1 disable-dvfs=1 ! "
+
+			case $resize_to_resolution in
+				"1280x720")
+					v4l2src_pipeline_str+="videoscale method=1 sharpen=1 ! video/x-raw, width=1280, height=720 ! "
+				;;
+				"640x360")
+					v4l2src_pipeline_str+="videoscale method=1 sharpen=1 ! video/x-raw, width=640, height=360 ! "
+				;;
+			esac
 
 			if [[ $nvvidconv_flip == "flip-method=2 " ]]; then
 				v4l2src_pipeline_str+=" videoflip video-direction=2 ! "
