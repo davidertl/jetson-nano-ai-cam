@@ -698,16 +698,18 @@ show_menu_camera_functions_lv1()
 										--title "Camera Function" \
 										--menu "Select the below functions" 25 78 14 \
 										"01" "Yolo V3 Detection Selection" \
-										"02" "retinaface - show faces" \
-										"03" "light numan pose" \
-										"04" "tf-pose-estimation" \
-										"05" "trt-pose" \
-										"06" "Show camera on HDMI output" \
-										"07" "Record video to mp4" \
-										"08" "Live Low latency WebRTC" \
-										"09" "Advanced Options" \
-										"10" "Reboot" \
-										"11" "Shutdown" 3>&1 1>&2 2>&3)
+										"02" "retinaface_pt - trt_cc show faces (fullscreen)" \
+										"03" "mtcnn_facenet" \
+										"04" "MTCNN_FaceDectection_TensorRT (doesn't work)" \
+										"05" "tf-pose-estimation (a few mins to build engine)" \
+										"06" "trt-pose" \
+										"07" "Show camera on HDMI output" \
+										"08" "Record video to mp4" \
+										"09" "Live Low latency WebRTC" \
+										"10" "OpenDataCam" \
+										"12" "Advanced Options" \
+										"13" "Reboot" \
+										"14" "Shutdown" 3>&1 1>&2 2>&3)
 
 	case $function_selection in
 		"") 
@@ -727,24 +729,54 @@ show_menu_camera_functions_lv1()
 		02)
 			clear
 			echo "retinaface - show faces"
+			execute_str="./retinaface '$v4l2src_pipeline_str'"
+			printf "\nDebug: $execute_str\n"
+			cd ~/StrangeAI/retinaface_pt/trt_cc/retinaface/build/
+			eval $execute_str
+
+
 		;;
 
 		03)
 			clear
-			echo "light numan pose"
+			echo "mtcnn_facenet, must only do 1920x1080 or need to redo all the engine, https://github.com/samsonadmin/mtcnn_facenet_cpp_tensorRT"
+			echo "Put images of people in the imgs folder. Please only use images that contain one face."
+			echo "NEW FEATURE:You can now add faces while the algorithm is running. When you see the OpenCV GUI, press \"N\" on your keyboard to add a new face. The camera input will stop until you have opened your terminal and put in the name of the person you want to add."
+			echo "Escape to quit"
+
+			pause
+			execute_str="./mtcnn_facenet_cpp_tensorRT '$v4l2src_pipeline_str'"
+			printf "\nDebug: $execute_str\n"	
+			cd ~/mtcnn_facenet_cpp_tensorRT/build
+			eval $execute_str
 		;;
 
 		04)
 			clear
-			echo "tf-pose-estimation"
+			echo "MTCNN_FaceDectection_TensorRT (doesn't work, nothing is shown on screen)"
+			execute_str="./build/main '$v4l2src_pipeline_str'"
+			printf "\nDebug: $execute_str\n"
+			cd ~/MTCNN_FaceDetection_TensorRT
+			eval $execute_str
 		;;
 
+
+
 		05)
+			clear
+			echo "tf-pose-estimation"
+			execute_str="python3 run_webcam.py --video='$v4l2src_pipeline_str' --model=mobilenet_v2_small --resize=432x368 --tensorrt=True --showBG=False"
+			printf "\nDebug: $execute_str\n"
+			cd ~/tf-pose-estimation
+			eval $execute_str
+		;;
+
+		06)
 			clear
 			echo "trt-pose"
 		;;
 
-		06)
+		07)
 			clear
 			##nvoverlaysink	##fullscreen, fast
 			##nveglglessink	##non fullscreen, slow
@@ -795,7 +827,7 @@ show_menu_camera_functions_lv1()
 		;;
 
 
-		07)
+		08)
 			clear
 		;;
 
@@ -809,11 +841,11 @@ show_menu_camera_functions_lv1()
 		;;
 
 
-		09)
+		12)
 			show_menu_advanced_options
 		;;
 
-		10)
+		13)
 			clear
 			printf "Reboot in 2s\n";
 			sleep 2
@@ -822,7 +854,7 @@ show_menu_camera_functions_lv1()
 
 		;;
 
-		11)
+		14)
 			clear
 			printf "Shutdown in 3s\n";
 			sleep 3
@@ -1339,23 +1371,6 @@ show_menu_camera_functions_lv1
 
 
 runInterval=5 # In seconds
-
-
-
-
-
-
-
-
-#nohup loop &>/dev/null &
-
-
-#eval $yolo_exec_str
-
-#nohup command &>/dev/null &
-
-
-echo $v4l2src_pipeline_str > ~/jetson-nano-ai-cam/last_run_pipeline.txt
 
 
 display_usage_help
