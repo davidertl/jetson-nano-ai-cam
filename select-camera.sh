@@ -19,8 +19,8 @@ today=`date +%Y%m%d-%H%M%S`
 
 yolo_detection_options[0,0]="Face Mask (Require GUI X11)"
 yolo_detection_options[0,1]="~/trained-weight/mask2020/samson-obj.edge.data"
-yolo_detection_options[0,2]="~/trained-weight/mask2020/samson-yolov3-tiny.cfg"
-yolo_detection_options[0,3]="~/trained-weight/mask2020/samson-yolov3-tiny_final.weights"
+yolo_detection_options[0,2]="~/trained-weight/mask2020/yolov3-tiny.cfg"
+yolo_detection_options[0,3]="~/trained-weight/mask2020/yolov3_last.weights"
 yolo_detection_options[0,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
 
 yolo_detection_options[1,0]="Face Mask No display (http://${myIPAddress}:8090)"
@@ -31,8 +31,8 @@ yolo_detection_options[1,4]="-dont_show -prefix ~/images/d${today} ${yolo_detect
 
 yolo_detection_options[2,0]="Face Mask High accuracy (Require GUI X11)"
 yolo_detection_options[2,1]="~/trained-weight/mask2020/samson-obj.edge.data"
-yolo_detection_options[2,2]="~/trained-weight/mask2020/samson-yolov3-tiny-832.cfg"
-yolo_detection_options[2,3]="~/trained-weight/mask2020/samson-yolov3-tiny_final-832.weights"
+yolo_detection_options[2,2]="~/trained-weight/mask2020/yolov3-tiny_832.cfg"
+yolo_detection_options[2,3]="~/trained-weight/mask2020/yolov3-tiny_832_last.weights"
 yolo_detection_options[2,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
 
 yolo_detection_options[3,0]="Face Mask High accuracy (http://${myIPAddress}:8090)"
@@ -42,9 +42,9 @@ yolo_detection_options[3,3]="${yolo_detection_options[2,3]}" ##same
 yolo_detection_options[3,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[2,4]}" 
 
 yolo_detection_options[4,0]="HK Police (Require GUI X11)"
-yolo_detection_options[4,1]="~/trained-weight/police2020/samson-obj.edge.data"
-yolo_detection_options[4,2]="~/trained-weight/police2020/samson-yolov3-tiny.cfg"
-yolo_detection_options[4,3]="~/trained-weight/police2020/samson-yolov3-tiny_last.weights"
+yolo_detection_options[4,1]="~/trained-weight/police2020/obj.edge.data"
+yolo_detection_options[4,2]="~/trained-weight/police2020/yolov3-tiny.cfg"
+yolo_detection_options[4,3]="~/trained-weight/police2020/yolov3-tiny_last.weights"
 yolo_detection_options[4,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
 
 yolo_detection_options[5,0]="HK Police (http://${myIPAddress}:8090)"
@@ -67,9 +67,9 @@ yolo_detection_options[7,3]="${yolo_detection_options[6,3]}" ##same
 yolo_detection_options[7,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[6,4]}" 
 
 yolo_detection_options[8,0]="HK Police 512 (Require GUI X11)"
-yolo_detection_options[8,1]="~/trained-weight/police2020/samson-obj.edge.data"
-yolo_detection_options[8,2]="~/trained-weight/police2020/samson-yolov3-tiny-512.cfg"
-yolo_detection_options[8,3]="~/trained-weight/police2020/samson-yolov3-tiny_last-512.weights"
+yolo_detection_options[8,1]="~/trained-weight/police2020/obj.edge.data"
+yolo_detection_options[8,2]="~/trained-weight/police2020/yolov3-tiny-512.cfg"
+yolo_detection_options[8,3]="~/trained-weight/police2020/yolov3-tiny_last-512.weights"
 yolo_detection_options[8,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
 
 
@@ -914,14 +914,6 @@ show_menu_yolov3_detection_options()
 
 	yolo_exec_str="./darknet detector demo "
 
-	##output string
-	##execute_str=$(cat <<EOF
-	##$yolo_exec_str -c $camera_num ${yolo_detection_options[$function_selection,1]} ${yolo_detection_options[$function_selection,2]} ${yolo_detection_options[$function_selection,3]}  | 
-	##gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} ' &
-	##EOF
-
-	##redirect stdout to null
-
 
 
 execute_str=$(cat <<EOF
@@ -1003,7 +995,7 @@ build_pipeline()
 
 		"RG10")
 			#onboard camera completely different
-			v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1600, height=(int)1200, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! 'video/x-raw, format=(string)BGRx' ! videoconvert ! 'video/x-raw, format=(string)BGR' ! "
+			v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1600, height=(int)1200, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv ${nvvidconv_flip} ! 'video/x-raw, format=(string)BGRx' ! "
 			#v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1640, height=(int)1232, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! 'video/x-raw, format=(string)BGRx' ! videoconvert ! 'video/x-raw, format=(string)BGR' ! tee name=t  t. !"
 		;;
 
@@ -1050,7 +1042,7 @@ build_pipeline()
 			#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! "
 
 			#opencv expects BGR
-			v4l2src_pipeline_str+="jpegparse ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! video/x-raw,format=(string)BGR ! "
+			v4l2src_pipeline_str+="jpegparse ! jpegdec ! video/x-raw,format=I420 ! "
 		;;
 
 		"H264")
@@ -1071,11 +1063,13 @@ build_pipeline()
 				v4l2src_pipeline_str+=" videoflip video-direction=2 ! "
 			fi
 			
-			v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=BGR ! "
+			
 			#v4l2src_pipeline_str+="nvv4l2decoder ! "
 		;;	
 
 	esac
+
+	v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=BGR ! "
 
 	#v4l2src_pipeline_str+=" tee name=t t. ! nvvidconv ! omxh264enc control-rate=2  bitrate=6000000 peak-bitrate=6500000  preset-level=2 profile=8 !  'video/x-h264, stream-format=(string)byte-stream, level=(string)5.2' ! h264parse ! qtmux ! filesink location=/mnt/sandisk/$today.mov t. ! "
 
