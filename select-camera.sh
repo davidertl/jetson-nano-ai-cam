@@ -1,5 +1,15 @@
 #!/bin/bash
 
+#works
+#https://github.com/umlaeute/v4l2loopback
+#sudo modprobe v4l2loopback video_nr=8,9  card_label="Virtual Video Sink 8","Virtual Video Sink 9"  buffers=1
+#gst-launch-1.0 -v videotestsrc ! video/x-raw, width=1920, height=1080, format=BGRx ! v4l2sink device=/dev/video9
+#gst-launch-1.0 v4l2src device=/dev/video9 ! videoconvert ! ximagesink
+#sudo modprobe -r v4l2loopback
+
+#gst-launch-1.0 v4l2src device=/dev/video0 ! "video/x-raw,width=1920,height=1080,framerate=30/1" ! tee name=rec ! queue ! v4l2sink device=/dev/video8 rec. ! queue ! v4l2sink device=/dev/video9
+
+
 ~/skip_sudo.sh
 
 declare -A VIDEO_CAMERA_INPUTS
@@ -11,6 +21,7 @@ myIPAddress=${myIPAddress::-1}
 echo 255 | sudo tee /sys/devices/pwm-fan/target_pwm
 
 v4l2src_pipeline_str=""
+v4l2src_ending_pipeline_str=""
 nvvidconv_flip=""
 resize_to_resolution="N/A"
 
@@ -18,9 +29,9 @@ resize_to_resolution="N/A"
 today=`date +%Y%m%d-%H%M%S`
 
 yolo_detection_options[0,0]="Face Mask (Require GUI X11)"
-yolo_detection_options[0,1]="~/trained-weight/mask2020/samson-obj.edge.data"
-yolo_detection_options[0,2]="~/trained-weight/mask2020/yolov3-tiny.cfg"
-yolo_detection_options[0,3]="~/trained-weight/mask2020/yolov3_last.weights"
+yolo_detection_options[0,1]="~/trained-weight/mask2020/obj.edge.data"
+yolo_detection_options[0,2]="~/trained-weight/mask2020/yolov3-tiny-var.cfg"
+yolo_detection_options[0,3]="~/trained-weight/mask2020/yolov3-tiny-var.weights"
 yolo_detection_options[0,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
 
 yolo_detection_options[1,0]="Face Mask No display (http://${myIPAddress}:8090)"
@@ -30,9 +41,9 @@ yolo_detection_options[1,3]="${yolo_detection_options[0,3]}" ##same
 yolo_detection_options[1,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[0,4]}"
 
 yolo_detection_options[2,0]="Face Mask High accuracy (Require GUI X11)"
-yolo_detection_options[2,1]="~/trained-weight/mask2020/samson-obj.edge.data"
-yolo_detection_options[2,2]="~/trained-weight/mask2020/yolov3-tiny_832.cfg"
-yolo_detection_options[2,3]="~/trained-weight/mask2020/yolov3-tiny_832_last.weights"
+yolo_detection_options[2,1]="~/trained-weight/mask2020/obj.edge.data"
+yolo_detection_options[2,2]="~/trained-weight/mask2020/yolov3-tiny-832.cfg"
+yolo_detection_options[2,3]="~/trained-weight/mask2020/yolov3-tiny-832.weights"
 yolo_detection_options[2,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
 
 yolo_detection_options[3,0]="Face Mask High accuracy (http://${myIPAddress}:8090)"
@@ -361,9 +372,9 @@ show_menu_camera_selection()
 		#echo "Height:	${VIDEO_CAMERA_INPUTS[$i,6]}"
 		#echo "FPS:	${VIDEO_CAMERA_INPUTS[$i,7]}"
 
-		tmp_str="(${VIDEO_CAMERA_INPUTS[$i,2]}) ${VIDEO_CAMERA_INPUTS[$i,5]}x${VIDEO_CAMERA_INPUTS[$i,6]}@${VIDEO_CAMERA_INPUTS[$i,7]}fps - ${VIDEO_CAMERA_INPUTS[$i,1]} "
+		tmp_str="(${VIDEO_CAMERA_INPUTS[$i,0]} ${VIDEO_CAMERA_INPUTS[$i,2]}) ${VIDEO_CAMERA_INPUTS[$i,5]}x${VIDEO_CAMERA_INPUTS[$i,6]}@${VIDEO_CAMERA_INPUTS[$i,7]}fps - ${VIDEO_CAMERA_INPUTS[$i,1]} "
 
-		dialog_menu+=("${VIDEO_CAMERA_INPUTS[$i,0]}")
+		dialog_menu+=($i)
 		dialog_menu+=($tmp_str)
 		#dialog_menu+=("")
 
@@ -383,8 +394,9 @@ show_menu_camera_selection()
 
 	camera_num=$(echo $return_str | rev | cut -b -1 )
 
-	#pause
+	
 	build_pipeline
+
 
 	case $return_str in
 
@@ -697,12 +709,12 @@ show_menu_camera_functions_lv1()
 										--menu "Select the below functions" 25 78 14 \
 										"01" "Yolo V3 Detection Selection" \
 										"02" "retinaface_pt - trt_cc show faces (fullscreen)" \
-										"03" "mtcnn_facenet" \
+										"03" "Face identification - mtcnn_facenet" \
 										"04" "MTCNN_FaceDectection_TensorRT (doesn't work)" \
 										"05" "jkjung-avt MTCNN TensorRT ('F' fullscreen, esc quit)" \
 										"06" "tf-pose-estimation (a few mins to build engine)" \
 										"06" "trt-pose" \
-										"07" "Show camera on HDMI output" \
+										"07" "~~~" \
 										"08" "Record video to mp4" \
 										"09" "Live Low latency WebRTC" \
 										"10" "OpenDataCam" \
@@ -729,7 +741,7 @@ show_menu_camera_functions_lv1()
 		02)
 			clear
 			echo "retinaface - show faces"
-			execute_str="./retinaface '$v4l2src_pipeline_str'"
+			execute_str="./retinaface '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
 			printf "\nDebug: $execute_str\n"
 			cd ~/StrangeAI/retinaface_pt/trt_cc/retinaface/build/
 			eval $execute_str
@@ -745,7 +757,7 @@ show_menu_camera_functions_lv1()
 			echo "Escape to quit"
 
 			pause
-			execute_str="./mtcnn_facenet_cpp_tensorRT '$v4l2src_pipeline_str'"
+			execute_str="./mtcnn_facenet_cpp_tensorRT '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
 			printf "\nDebug: $execute_str\n"	
 			cd ~/mtcnn_facenet_cpp_tensorRT/build
 			eval $execute_str
@@ -754,7 +766,7 @@ show_menu_camera_functions_lv1()
 		04)
 			clear
 			echo "MTCNN_FaceDectection_TensorRT (doesn't work, nothing is shown on screen)"
-			execute_str="./build/main '$v4l2src_pipeline_str'"
+			execute_str="./build/main '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
 			printf "\nDebug: $execute_str\n"
 			cd ~/MTCNN_FaceDetection_TensorRT
 			eval $execute_str
@@ -763,7 +775,7 @@ show_menu_camera_functions_lv1()
 		05)
 			clear
 			echo "jkjung-avt MTCNN TensorRT"
-			execute_str="python3 trt_mtcnn.py --v4l2 '$v4l2src_pipeline_str'"
+			execute_str="python3 trt_mtcnn.py --v4l2 '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
 			printf "\nDebug: $execute_str\n"
 			cd ~/jkjung-avt/tensorrt_demos
 			eval $execute_str
@@ -776,7 +788,7 @@ show_menu_camera_functions_lv1()
 		09)
 			clear
 			echo "tf-pose-estimation"
-			execute_str="python3 run_webcam.py --video='$v4l2src_pipeline_str' --model=mobilenet_v2_small --resize=432x368 --tensorrt=True --showBG=False"
+			execute_str="python3 run_webcam.py --video='$v4l2src_pipeline_str $v4l2src_ending_pipeline_str' --model=mobilenet_v2_small --resize=432x368 --tensorrt=True --showBG=False"
 			printf "\nDebug: $execute_str\n"
 			cd ~/tf-pose-estimation
 			eval $execute_str
@@ -791,43 +803,20 @@ show_menu_camera_functions_lv1()
 			clear
 			##nvoverlaysink	##fullscreen, fast
 			##nveglglessink	##non fullscreen, slow
-			##nv3dsink
+			##nv3dsink fast?
 			##nvvideosink
 			##xvimagesink
-			case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
-				"RG10")					
-					#v4l2src_pipeline_str=${v4l2src_pipeline_str//1640/1920}	
-					#v4l2src_pipeline_str=${v4l2src_pipeline_str//1232/1080}	
 
-					v4l2src_display_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1640, height=(int)1232, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv ${nvvidconv_flip} ! nvoverlaysink sync=false async=false"					
-					execute_str="gst-launch-1.0 $v4l2src_display_str -e"
-				;;
-				"MJPG")					
-					#v4l2src_display_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! image/jpeg, width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nvoverlaysink sync=false async=false"	
+			#v4l2src_display_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! image/jpeg, width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nvoverlaysink sync=false async=false"	
 
-					#working
-					#v4l2src_display_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! image/jpeg, width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)RGBA' ! nvoverlaysink sync=false async=false"			
+			#logo overlay
+			v4l2src_pipeline_str+="gdkpixbufoverlay location=~/jetson-nano-ai-cam/carryai-simple-dark.png offset-x=-1 offset-y=1 ! "
 
-					v4l2src_display_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! image/jpeg, width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! jpegparse ! jpegdec ! video/x-raw ! nvvidconv ${nvvidconv_flip} ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvoverlaysink sync=false async=false"		
+			execute_str="gst-launch-1.0 $v4l2src_pipeline_str nvvidconv ${nvvidconv_flip} ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nv3dsink sync=false async=false -e"
 
 
-					execute_str="gst-launch-1.0 $v4l2src_display_str -e"
+			printf "\nDebug v4l2src_pipeline: \n$v4l2src_pipeline_str\n"
 
-
-				;;
-
-				*)
-					#v4l2src_display_str=${v4l2src_pipeline_str//appsink/ nvvidconv ! 'video/x-raw\(memory:NVMM\), format=I420,  width=\(int\)1920, height=\(int\)1080, framerate=30/1' ! nvoverlaysink}
-					v4l2src_display_str=${v4l2src_pipeline_str//appsink/ nvvidconv $nvvidconv_flip ! nvoverlaysink}
-					
-					#v4l2src_display_str=${v4l2src_display_str//appsink/ xvimagesink}
-					execute_str="gst-launch-1.0 $v4l2src_display_str -e"
-				;;
-				
-			esac
-
-		
-			#execute_str="gst-launch-1.0 $v4l2src_display_str -e"
 			printf "\nDebug: $execute_str\n"
 	
 			eval $execute_str
@@ -894,7 +883,7 @@ show_menu_yolov3_detection_options()
 										"${dialog_menu[@]}" 3>&1 1>&2 2>&3)
 
 	clear
-	printf "v4l2src_pipeline_str:\n$v4l2src_pipeline_str\n\n"
+	printf "v4l2src_pipeline_str:\n$v4l2src_pipeline_str v4l2src_ending_pipeline_str\n\n"
 
 	if [ "$function_selection" == "" ]; then
 			show_menu_camera_functions_lv1
@@ -922,7 +911,7 @@ execute_str=$(cat <<EOF
   ${yolo_detection_options[$function_selection,2]} \
   ${yolo_detection_options[$function_selection,3]} \
   ${yolo_detection_options[$function_selection,4]} \
-  '$v4l2src_pipeline_str' \
+  '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str' \
   | gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} '
 EOF
 )
@@ -988,7 +977,12 @@ build_pipeline()
 	esac
 
 
+	##samson last
 	v4l2src_pipeline_str+="width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! "
+	##samson last
+	#v4l2src_pipeline_str+=" tee name=t   t. ! "
+	# t. ! v4l2sink device=/dev/video9
+
 
 	case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
 
@@ -996,6 +990,7 @@ build_pipeline()
 		"RG10")
 			#onboard camera completely different
 			v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1600, height=(int)1200, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv ${nvvidconv_flip} ! 'video/x-raw, format=(string)BGRx' ! "
+			#v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1640, height=(int)1232, format=(string)NV12, framerate=(fraction)30/1' ! "
 			#v4l2src_pipeline_str="nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1640, height=(int)1232, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv flip-method=2 ! 'video/x-raw, format=(string)BGRx' ! videoconvert ! 'video/x-raw, format=(string)BGR' ! tee name=t  t. !"
 		;;
 
@@ -1015,10 +1010,11 @@ build_pipeline()
 			fi			
 			
 			#v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=I420 ! "
-			v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=BGR ! "
 		;;
 
 		"MJPG")
+
+			v4l2src_pipeline_str+="jpegparse ! jpegdec ! video/x-raw,format=I420 !"
 
 			case $resize_to_resolution in
 				"1280x720")
@@ -1042,13 +1038,16 @@ build_pipeline()
 			#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! "
 
 			#opencv expects BGR
-			v4l2src_pipeline_str+="jpegparse ! jpegdec ! video/x-raw,format=I420 ! "
+			
 		;;
 
 		"H264")
 			# Jetson Nano    enable-low-outbuffer=1 
 			# Jetson Nano max perf   disable-dvfs=1
-			v4l2src_pipeline_str+="omxh264dec enable-low-outbuffer=1 disable-dvfs=1 ! "
+			# can use nvv4l2decoder instead of omxh266dec
+			#v4l2src_pipeline_str+="queue ! h264parse ! omxh264dec enable-low-outbuffer=1 disable-dvfs=1 !"
+			v4l2src_pipeline_str+="omxh264dec enable-low-outbuffer=1 disable-dvfs=1 !"
+			#v4l2src_pipeline_str+="queue ! h264parse ! nvv4l2decoder enable-max-performance=1 ! nvvidconv ! video/x-raw(memory:NVMM), format=BGRx ! " 
 
 			case $resize_to_resolution in
 				"1280x720")
@@ -1069,12 +1068,16 @@ build_pipeline()
 
 	esac
 
-	v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=BGR ! "
+
+	#tee name=t   t. ! identity drop-allocation=1 ! v4l2sink device=/dev/video9 
+	# t. ! v4l2sink device=/dev/video9
+
+	v4l2src_ending_pipeline_str+="videoconvert ! video/x-raw, format=BGR ! "
+	##v4l2src_ending_pipeline_str+="appsink sync=false async=false "
+	v4l2src_ending_pipeline_str+="appsink  sync=false async=true "
 
 	#v4l2src_pipeline_str+=" tee name=t t. ! nvvidconv ! omxh264enc control-rate=2  bitrate=6000000 peak-bitrate=6500000  preset-level=2 profile=8 !  'video/x-h264, stream-format=(string)byte-stream, level=(string)5.2' ! h264parse ! qtmux ! filesink location=/mnt/sandisk/$today.mov t. ! "
-
-
-	v4l2src_pipeline_str+=" appsink sync=false async=false "
+	
 
 	#printf "$v4l2src_pipeline_str\n\n";
 
@@ -1176,13 +1179,14 @@ do
 	this_device_id="${video_camera_array[$i]}"
 	VIDEO_CAMERA_INPUTS[$i,0]="$this_device_id"
 
-	#v4l2-ctl --device=$this_device_id --list-formats-ext
+	#echo "v4l2-ctl --device=$this_device_id --list-formats-ext"
+	
 
 	#get Name
 	VIDEO_CAMERA_INPUTS[$i,1]=$(v4l2-ctl --device=$this_device_id --all | grep "Card.*type" | cut -d ' ' -f 8-)
 
 	#Rasperri pi camera
-	if [[ $(v4l2-ctl --device=$i --list-formats-ext --list-formats | awk '/RG10'/ | wc -l ) > 0 ]]; 
+	if [[ $(v4l2-ctl --device=$this_device_id --list-formats-ext --list-formats | awk '/RG10'/ | wc -l ) > 0 ]]; 
 	then
 		VIDEO_CAMERA_INPUTS[$i,2]="RG10"
 	fi
@@ -1192,12 +1196,12 @@ do
 		VIDEO_CAMERA_INPUTS[$i,2]="YUYV"
 	fi
 
-	if [[ $(v4l2-ctl --device=$i --list-formats-ext --list-formats | awk '/MJPG'/ | wc -l ) > 0 ]]; 
+	if [[ $(v4l2-ctl --device=$this_device_id --list-formats-ext --list-formats | awk '/MJPG'/ | wc -l ) > 0 ]]; 
 	then
 		VIDEO_CAMERA_INPUTS[$i,2]="MJPG"
 	fi
 
-	if [[ $(v4l2-ctl --device=$i --list-formats-ext --list-formats | awk '/H264'/ | wc -l ) > 0 ]]; 
+	if [[ $(v4l2-ctl --device=$this_device_id --list-formats-ext --list-formats | awk '/H264'/ | wc -l ) > 0 ]]; 
 	then
 		VIDEO_CAMERA_INPUTS[$i,2]="H264"
 	fi
@@ -1359,10 +1363,7 @@ function_selection=1
 
 #printf "Chosen: ${VIDEO_CAMERA_INPUTS[$camera_num,1]} ${VIDEO_CAMERA_INPUTS[$camera_num,0]}\n"
 
-
-
-
-printf "\n"
+#printf "\n"
 
 #--list-ctrls-menus
 ##disable auto exposure 1-disable auto exposure, 3-enable auto exposure
