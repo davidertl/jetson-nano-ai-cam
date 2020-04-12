@@ -1221,7 +1221,14 @@ done
 #printf "\nGet Frame Size ============================\n\n";
 
 for (( i=0; i<${#video_camera_array[@]}; i++ ));
-do	 
+do
+
+	##empty string if it cannot detect for the tee isn't active, so cannot detect the support color space
+	if [ "${VIDEO_CAMERA_INPUTS[$i,2]}" == "" ]; then
+		selected_width="N/A"
+		selected_height="N/A"
+		continue
+	fi
 
 	#echo "$i. Doing: v4l2-ctl --device=${VIDEO_CAMERA_INPUTS[$i,0]} --list-framesizes=${VIDEO_CAMERA_INPUTS[$i,2]} "
 
@@ -1236,13 +1243,18 @@ do
 	IFS=$'\n\r'
 	readarray -t temp_array <<< ${VIDEO_CAMERA_INPUTS[$i,3]}
 
-
 	#sort it reverse
 	sorted_array=($(sort -t 'x' -k 2n <<<"${temp_array[*]}"))
 
-	##echo "Sorted array: ${sorted_array[*]}"
+	#echo "Sorted array: ${sorted_array[*]}, size: ${#temp_array[@]}"
 
-	VIDEO_CAMERA_INPUTS[$i,4]="${sorted_array[-1]}" ##THE highest resolution the cam can do
+
+	if [ "${#temp_array[@]}" -gt "1" ]; then
+		VIDEO_CAMERA_INPUTS[$i,4]="${sorted_array[-1]}" ##THE highest resolution the cam can do
+	else
+		VIDEO_CAMERA_INPUTS[$i,4]="${sorted_array[0]}" ##THE highest resolution the cam can do
+	fi
+	
 
 	selected_width=0
 	selected_height=0
@@ -1275,6 +1287,9 @@ do
 
 
 	##skip test if 1920x1080 works
+
+	#echo " ${#sorted_array[@]} "
+
 	if [[ $selected_width == "0" ]]; then
 
 		##test if it can do 30 fps by testing with string 30.000 fps
