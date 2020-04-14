@@ -1,3 +1,4 @@
 *.log
 **/logs
 SELECTCAMERA_PID
+*.mp4

@@ -31,7 +31,7 @@ yolo_detection_options[0,0]="Face Mask (Require GUI X11)"
 yolo_detection_options[0,1]="~/trained-weight/mask2020/obj.edge.data"
 yolo_detection_options[0,2]="~/trained-weight/mask2020/yolov3-tiny-var.cfg"
 yolo_detection_options[0,3]="~/trained-weight/mask2020/yolov3-tiny-var.weights"
-yolo_detection_options[0,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
+yolo_detection_options[0,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
 yolo_detection_options[1,0]="Face Mask No display (http://${myIPAddress}:8090)"
 yolo_detection_options[1,1]="${yolo_detection_options[0,1]}" ##same
@@ -43,7 +43,7 @@ yolo_detection_options[2,0]="Face Mask High accuracy (Require GUI X11)"
 yolo_detection_options[2,1]="~/trained-weight/mask2020/obj.edge.data"
 yolo_detection_options[2,2]="~/trained-weight/mask2020/yolov3-tiny-832.cfg"
 yolo_detection_options[2,3]="~/trained-weight/mask2020/yolov3-tiny-832.weights"
-yolo_detection_options[2,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
+yolo_detection_options[2,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
 yolo_detection_options[3,0]="Face Mask High accuracy (http://${myIPAddress}:8090)"
 yolo_detection_options[3,1]="${yolo_detection_options[2,1]}" ##same
@@ -55,7 +55,7 @@ yolo_detection_options[4,0]="HK Police 512+(Require GUI X11)"
 yolo_detection_options[4,1]="~/trained-weight/police2020/obj.edge.data"
 yolo_detection_options[4,2]="~/trained-weight/police2020/yolov3-tiny-512-rotate-40.cfg"
 yolo_detection_options[4,3]="~/trained-weight/police2020/yolov3-tiny-512-rotate-40-more_var.weights"
-yolo_detection_options[4,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
+yolo_detection_options[4,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
 yolo_detection_options[5,0]="HK Police (http://${myIPAddress}:8090)"
 yolo_detection_options[5,1]="${yolo_detection_options[4,1]}" ##same
@@ -68,7 +68,7 @@ yolo_detection_options[6,0]="80 Different objects (Require GUI X11)"
 yolo_detection_options[6,1]="~/trained-weight/reference/coco.data"
 yolo_detection_options[6,2]="~/trained-weight/reference/yolov3-tiny.cfg"
 yolo_detection_options[6,3]="~/trained-weight/reference/yolov3-tiny.weights"
-yolo_detection_options[6,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
+yolo_detection_options[6,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
 yolo_detection_options[7,0]="80 Different objects (http://${myIPAddress}:8090)"
 yolo_detection_options[7,1]="${yolo_detection_options[6,1]}" ##same
@@ -80,7 +80,7 @@ yolo_detection_options[8,0]="HK Police 512 (Require GUI X11)"
 yolo_detection_options[8,1]="~/trained-weight/police2020/obj.edge.data"
 yolo_detection_options[8,2]="~/trained-weight/police2020/yolov3-tiny-512.cfg"
 yolo_detection_options[8,3]="~/trained-weight/police2020/yolov3-tiny-512.weights"
-yolo_detection_options[8,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070"
+yolo_detection_options[8,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
 
 #pause
@@ -715,8 +715,9 @@ show_menu_camera_functions_lv1()
 										"06" "tf-pose-estimation (a few mins to build engine)" \
 										"07" "trt-pose densenet(a mins to load model)" \
 										"08" "trt-pose resnet(a mins to load model)" \
-										"09" "(not done yet)Record video to mp4" \
+										"09" "Record video to ~/xxx.mov" \
 										"10" "(not done yet)Live Low latency WebRTC" \
+										"20" "Direct Display to HDMI" \
 										"21" "Advanced Options" \
 										"22" "Reboot" \
 										"23" "Shutdown" 3>&1 1>&2 2>&3)
@@ -816,11 +817,28 @@ show_menu_camera_functions_lv1()
 			eval $execute_str
 		;;
 
+		09)
+			clear
+			echo "Recording Live"
+			today=`date +%Y%m%d-%H%M%S`
+			FILE="~/LIVE-Recording-$today.mp4"
+			sudo mount /dev/sda1 /media/5a5cff49-52fe-4e32-b1dc-886e34ce958b
+			if [[ -d "/media/5a5cff49-52fe-4e32-b1dc-886e34ce958b" ]]; then
+				echo "/media/5a5cff49-52fe-4e32-b1dc-886e34ce958b exist"
+				FILE="/media/5a5cff49-52fe-4e32-b1dc-886e34ce958b/LIVE-Recording-$today.mp4"
+			fi
+			
+			execute_str="sudo gst-launch-1.0 -e $v4l2src_pipeline_str nvvidconv ! 'video/x-raw(memory:NVMM), width=1920, height=1080, format=NV12, framerate=$framerate/1' ! nvv4l2h265enc bitrate=7000000 ! h265parse ! qtmux ! filesink location=$FILE -e"
+			printf "\nDebug: $execute_str\n"
+			cd ~
+			eval $execute_str
+		;;
+
 		20)
 			clear
 			##nvoverlaysink	##fullscreen, fast
 			##nveglglessink	##non fullscreen, slow
-			##nv3dsink fast?
+			##nv3dsink fast? can use drop=true
 			##nvvideosink
 			##xvimagesink
 
@@ -829,7 +847,7 @@ show_menu_camera_functions_lv1()
 			#logo overlay
 			v4l2src_pipeline_str+="gdkpixbufoverlay location=~/jetson-nano-ai-cam/carryai-simple-dark.png offset-x=-1 offset-y=1 ! "
 
-			execute_str="gst-launch-1.0 $v4l2src_pipeline_str nvvidconv ${nvvidconv_flip} ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nv3dsink sync=false async=false drop=true -e"
+			execute_str="gst-launch-1.0 $v4l2src_pipeline_str nvvidconv ${nvvidconv_flip} ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nvoverlaysink sync=false async=false -e"
 
 
 			printf "\nDebug v4l2src_pipeline: \n$v4l2src_pipeline_str\n"
@@ -878,6 +896,9 @@ show_menu_camera_functions_lv1()
 ###################
 show_menu_yolov3_detection_options()
 {
+
+	##remove older files than 2 days
+	sudo find /home/jetsonnano/images -name "*.jpg" -type f -mtime +2 -exec rm -f {} \;
 
 
 	back_title="Chosen Camera: ${VIDEO_CAMERA_INPUTS[$camera_num,1]} ${VIDEO_CAMERA_INPUTS[$camera_num,0]} ${VIDEO_CAMERA_INPUTS[$camera_num,5]}x${VIDEO_CAMERA_INPUTS[$camera_num,6]}@${VIDEO_CAMERA_INPUTS[$camera_num,7]}fps"

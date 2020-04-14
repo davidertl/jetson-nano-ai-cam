@@ -6,7 +6,7 @@
 today=`date +%Y-%m-%d.%H.%M.%S`
 
 clear
-#~/skip_sudo.sh
+~/skip_sudo.sh
 
 connection_successful=false
 retry_count=0
