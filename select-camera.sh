@@ -9,7 +9,6 @@
 
 #gst-launch-1.0 v4l2src device=/dev/video0 ! "video/x-raw,width=1920,height=1080,framerate=30/1" ! tee name=rec ! queue ! v4l2sink device=/dev/video8 rec. ! queue ! v4l2sink device=/dev/video9
 
-
 ~/skip_sudo.sh
 
 declare -A VIDEO_CAMERA_INPUTS
@@ -707,18 +706,17 @@ show_menu_camera_functions_lv1()
 	function_selection=$(whiptail --backtitle "${back_title}" \
 										--title "Camera Function" \
 										--menu "Select the below functions" 25 78 14 \
+										"00" "Python Cam test CV2 ('F' fullscreen, esc quit)" \
 										"01" "Yolo V3 Detection Selection" \
 										"02" "retinaface_pt - trt_cc show faces (fullscreen)" \
 										"03" "Face identification - mtcnn_facenet" \
 										"04" "MTCNN_FaceDectection_TensorRT (doesn't work)" \
 										"05" "jkjung-avt MTCNN TensorRT ('F' fullscreen, esc quit)" \
 										"06" "tf-pose-estimation (a few mins to build engine)" \
-										"06" "trt-pose" \
-										"07" "~~~" \
-										"08" "Record video to mp4" \
-										"09" "Live Low latency WebRTC" \
-										"10" "OpenDataCam" \
-										"20" "Show camera on HDMI output" \
+										"07" "trt-pose densenet" \
+										"08" "trt-pose resnet" \
+										"09" "(not done yet)Record video to mp4" \
+										"10" "(not done yet)Live Low latency WebRTC" \
 										"21" "Advanced Options" \
 										"22" "Reboot" \
 										"23" "Shutdown" 3>&1 1>&2 2>&3)
@@ -729,6 +727,15 @@ show_menu_camera_functions_lv1()
 			clear
 			show_menu_camera_selection
 			exit 0
+		;;
+
+		00)
+			clear
+			echo "Simple Python CV2 Test"
+			execute_str="python3 nano_cam_test.py --video '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
+			printf "\nDebug: $execute_str\n"
+			cd ~/jetson-nano-ai-cam
+			eval $execute_str
 		;;
 
 		01)
@@ -782,10 +789,7 @@ show_menu_camera_functions_lv1()
 		;;
 
 
-
-
-
-		09)
+		06)
 			clear
 			echo "tf-pose-estimation"
 			execute_str="python3 run_webcam.py --video='$v4l2src_pipeline_str $v4l2src_ending_pipeline_str' --model=mobilenet_v2_small --resize=432x368 --tensorrt=True --showBG=False"
@@ -794,9 +798,22 @@ show_menu_camera_functions_lv1()
 			eval $execute_str
 		;;
 
-		10)
+		07)
 			clear
-			echo "trt-pose"
+			echo "trt-pose (densenet)"
+			execute_str="python3 get_keypoint_from_video.py --model=densenet --video='$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
+			printf "\nDebug: $execute_str\n"
+			cd ~/NVIDIA-AI-IOT/trt_pose/tasks/human_pose
+			eval $execute_str
+		;;
+
+		08)
+			clear
+			echo "trt-pose (resnet)"
+			execute_str="python3 get_keypoint_from_video.py --model=resnet --video='$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
+			printf "\nDebug: $execute_str\n"
+			cd ~/NVIDIA-AI-IOT/trt_pose/tasks/human_pose
+			eval $execute_str
 		;;
 
 		20)
@@ -812,7 +829,7 @@ show_menu_camera_functions_lv1()
 			#logo overlay
 			v4l2src_pipeline_str+="gdkpixbufoverlay location=~/jetson-nano-ai-cam/carryai-simple-dark.png offset-x=-1 offset-y=1 ! "
 
-			execute_str="gst-launch-1.0 $v4l2src_pipeline_str nvvidconv ${nvvidconv_flip} ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nv3dsink sync=false async=false -e"
+			execute_str="gst-launch-1.0 $v4l2src_pipeline_str nvvidconv ${nvvidconv_flip} ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nv3dsink sync=false async=false drop=true -e"
 
 
 			printf "\nDebug v4l2src_pipeline: \n$v4l2src_pipeline_str\n"
@@ -1074,7 +1091,7 @@ build_pipeline()
 
 	v4l2src_ending_pipeline_str+="videoconvert ! video/x-raw, format=BGR ! "
 	##v4l2src_ending_pipeline_str+="appsink sync=false async=false "
-	v4l2src_ending_pipeline_str+="appsink  sync=false async=true "
+	v4l2src_ending_pipeline_str+="appsink sync=false async=true drop=true "
 
 	#v4l2src_pipeline_str+=" tee name=t t. ! nvvidconv ! omxh264enc control-rate=2  bitrate=6000000 peak-bitrate=6500000  preset-level=2 profile=8 !  'video/x-h264, stream-format=(string)byte-stream, level=(string)5.2' ! h264parse ! qtmux ! filesink location=/mnt/sandisk/$today.mov t. ! "
 	
