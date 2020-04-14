@@ -713,8 +713,8 @@ show_menu_camera_functions_lv1()
 										"04" "MTCNN_FaceDectection_TensorRT (doesn't work)" \
 										"05" "jkjung-avt MTCNN TensorRT ('F' fullscreen, esc quit)" \
 										"06" "tf-pose-estimation (a few mins to build engine)" \
-										"07" "trt-pose densenet" \
-										"08" "trt-pose resnet" \
+										"07" "trt-pose densenet(a mins to load model)" \
+										"08" "trt-pose resnet(a mins to load model)" \
 										"09" "(not done yet)Record video to mp4" \
 										"10" "(not done yet)Live Low latency WebRTC" \
 										"21" "Advanced Options" \
