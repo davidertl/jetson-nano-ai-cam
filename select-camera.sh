@@ -23,6 +23,7 @@ v4l2src_pipeline_str=""
 v4l2src_ending_pipeline_str=""
 nvvidconv_flip=""
 resize_to_resolution="N/A"
+video_file_for_v4l2src_pipeline=""
 
 #today=`date +%Y-%m-%d.%H:%M:%S`
 today=`date +%Y%m%d-%H%M%S`
@@ -336,10 +337,8 @@ show_device_info()
 			printf "compare latest version with: https://developer.nvidia.com/embedded/linux-tegra-archive\n";
 
 			sudo nmcli device
-			sudo nmcli con
-			pause
+			sudo nmcli con			
 			sudo lsusb 
-			pause
 			sudo modem-manager.mmcli -L
 			pause
 			sudo mmcli -m $modem_id
@@ -379,23 +378,43 @@ show_menu_camera_selection()
 
 	done
 
+
+
 	dialog_menu+=("k")
-  dialog_menu+=("Kill Interference")
+	dialog_menu+=("Kill Interference")
 	dialog_menu+=("q")
-  dialog_menu+=("Quit")
+	dialog_menu+=("Quit")
 	dialog_menu+=("o")
 	dialog_menu+=("Advanced Options")
+
+	#Looping videos in from the folder test-videos
+	IFS=$'\n\r'
+	readarray -t test_videos < <(find ~/test-videos -name \*.mp4 )
+	for (( i=0; i<${#test_videos[*]}; i++ ));
+	do
+		dialog_menu+=("V${i}")
+		this_video="${test_videos[$i]}"
+
+		dialog_menu+=("${this_video##*/}")
+	done
+
 
 	return_str=$(whiptail --backtitle "Listing all the UVC Cameras" \
 										--title "Select the video device" \
 										--menu "/dev/video*" 16 78 8  \
 										"${dialog_menu[@]}" 3>&1 1>&2 2>&3)
 
+	#echo $return_str
+	#pause
 	camera_num=$(echo $return_str | rev | cut -b -1 )
 
-	
+	##Doesn't work now	
+#	if [ $(echo $return_str | head -c 1)  == "V" ]; then
+#		test_video_index=${return_str:1}
+#		video_file_for_v4l2src_pipeline="${test_videos[$test_video_index]}"
+#	fi
+		
 	build_pipeline
-
 
 	case $return_str in
 
@@ -418,7 +437,6 @@ show_menu_camera_selection()
 			printf "\n(Escape key)\n"
 			exit 0
 		;;
-
 
 		*)
 			show_menu_camera_functions_lv1
@@ -845,7 +863,7 @@ show_menu_camera_functions_lv1()
 			#v4l2src_display_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! image/jpeg, width=${VIDEO_CAMERA_INPUTS[$camera_num,5]}, height=${VIDEO_CAMERA_INPUTS[$camera_num,6]}, framerate=$framerate/1 ! jpegparse ! nvjpegdec ! video/x-raw ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)I420' ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nvoverlaysink sync=false async=false"	
 
 			#logo overlay
-			v4l2src_pipeline_str+="gdkpixbufoverlay location=~/jetson-nano-ai-cam/carryai-simple-dark.png offset-x=-1 offset-y=1 ! "
+			#v4l2src_pipeline_str+="gdkpixbufoverlay location=~/jetson-nano-ai-cam/carryai-simple-dark.png offset-x=-1 offset-y=1 ! "
 
 			execute_str="gst-launch-1.0 $v4l2src_pipeline_str nvvidconv ${nvvidconv_flip} ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nvoverlaysink sync=false async=false -e"
 
@@ -964,7 +982,6 @@ EOF
 	fi
 
 	printf "\nDebug:\n$execute_str\n\n"
-	pause
 
 	echo "$v4l2src_pipeline_str" >> ~/jetson-nano-ai-cam/launch.log
 	echo "" >> ~/jetson-nano-ai-cam/launch.log
@@ -994,9 +1011,8 @@ EOF
 build_pipeline()
 {
 
-
 	v4l2src_pipeline_str="v4l2src io-mode=2 device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} do-timestamp=true ! "
-
+	v4l2src_ending_pipeline_str=""
 
 	case ${VIDEO_CAMERA_INPUTS[$camera_num,2]} in
 
@@ -1044,7 +1060,8 @@ build_pipeline()
 			esac
 
 			if [[ $nvvidconv_flip == "flip-method=2 " ]]; then
-				v4l2src_pipeline_str+=" videoflip video-direction=2 ! "
+				v4l2src_pipeline_str+="nvvidconv flip-method=2 ! "
+				#v4l2src_pipeline_str+="videoflip video-direction=2 ! "
 			fi			
 			
 			#v4l2src_pipeline_str+="videoconvert ! video/x-raw, format=I420 ! "
@@ -1052,7 +1069,8 @@ build_pipeline()
 
 		"MJPG")
 
-			v4l2src_pipeline_str+="jpegparse ! jpegdec ! video/x-raw,format=I420 !"
+			#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw,format=I420 !"
+			v4l2src_pipeline_str+="jpegparse ! jpegdec ! "
 
 			case $resize_to_resolution in
 				"1280x720")
@@ -1064,8 +1082,9 @@ build_pipeline()
 			esac
 
 			if [[ $nvvidconv_flip == "flip-method=2 " ]]; then
-				v4l2src_pipeline_str+=" videoflip video-direction=2 ! "
-			fi
+			#	v4l2src_pipeline_str+="nvvidconv flip-method=2 ! "
+				v4l2src_pipeline_str+="videoflip video-direction=2 ! "
+			fi	
 
 			##jpegdec > nvjpegdec
 		
@@ -1112,13 +1131,20 @@ build_pipeline()
 
 	v4l2src_ending_pipeline_str+="videoconvert ! video/x-raw, format=BGR ! "
 	##v4l2src_ending_pipeline_str+="appsink sync=false async=false "
-	v4l2src_ending_pipeline_str+="appsink sync=false async=true drop=true "
+	v4l2src_ending_pipeline_str+="appsink sync=false async=true "
 
 	#v4l2src_pipeline_str+=" tee name=t t. ! nvvidconv ! omxh264enc control-rate=2  bitrate=6000000 peak-bitrate=6500000  preset-level=2 profile=8 !  'video/x-h264, stream-format=(string)byte-stream, level=(string)5.2' ! h264parse ! qtmux ! filesink location=/mnt/sandisk/$today.mov t. ! "
 	
 
 	#printf "$v4l2src_pipeline_str\n\n";
 
+	
+	##if there is video_file_for_v4l2src_pipeline, then just use the video
+	##useless right now, to be developed
+	# [ "$video_file_for_v4l2src_pipeline" != "" ]; then
+	#	v4l2src_pipeline_str="$video_file_for_v4l2src_pipeline"
+	#	v4l2src_ending_pipeline_str=""
+	#
 
 }
 
