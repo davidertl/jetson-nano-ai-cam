@@ -20,14 +20,15 @@ def main():
     args = parser.parse_args()
 
     cap = cv2.VideoCapture(args.video, cv2.CAP_GSTREAMER)
-    cv2.namedWindow(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN)
-    cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_OPENGL)
-    cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    #cv2.namedWindow(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN)
+    
+    #cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     #skip writing
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')    
     #out_video = cv2.VideoWriter('output.mp4', fourcc, cap.get(cv2.CAP_PROP_FPS), (1920, 1080))
-
+    out_video = cv2.VideoWriter('output.mp4', fourcc, 30, (1920, 1080))
+    
     full_scrn = True
     fps = 0.0
     tic = time.time()
@@ -45,9 +46,11 @@ def main():
                     "FPS: %f" % (1.0 / (time.time() - fps_time)),
                     (10, 25),  cv2.FONT_HERSHEY_SIMPLEX, 1,
                     (0, 255, 0), 2)
-        cv2.imshow(WINDOW_NAME, image)
+        
+        #cv2.imshow(WINDOW_NAME, image)
 
-        #out_video.write(image)
+
+        out_video.write(image)
 
         fps_time = time.time()
         key = cv2.waitKey(1)
@@ -65,7 +68,7 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
-    #out_video.release()
+    out_video.release()
     #logger.debug('finished+')
 if __name__ == "__main__":
     main()

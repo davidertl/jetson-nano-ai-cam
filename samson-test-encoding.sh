@@ -34,3 +34,10 @@ gst-launch-1.0 filesrc location=~/test-videos/inverted-LIVE-Recording-20200414-1
 MULTILINE-COMMENT
 
    #nvoverlaysink -e
+
+#mjpg-streamer   
+mjpg-streamer -i "input_uvc.so --device /dev/video0 -r 1920x1080 -f 30 -q 60" 
+
+mjpg-streamer -i "gst-launch-1.0 v4l2src io-mode=2 device=/dev/video0 do-timestamp=true ! image/jpeg, width=1920, height=1080, framerate=30/1 ! jpegparse ! jpegdec !  nvvidconv  ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nvvidconv ! nvegltransform ! nveglglessink -e"
+
+#http://192.168.1.89:8080/?action=stream  

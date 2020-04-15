@@ -25,6 +25,9 @@ nvvidconv_flip=""
 resize_to_resolution="N/A"
 video_file_for_v4l2src_pipeline=""
 
+#map it to HDMI output
+export DISPLAY=:0
+
 #today=`date +%Y-%m-%d.%H:%M:%S`
 today=`date +%Y%m%d-%H%M%S`
 
@@ -847,7 +850,7 @@ show_menu_camera_functions_lv1()
 				FILE="/media/5a5cff49-52fe-4e32-b1dc-886e34ce958b/LIVE-Recording-$today.mp4"
 			fi
 			
-			execute_str="sudo gst-launch-1.0 -e $v4l2src_pipeline_str nvvidconv ! 'video/x-raw(memory:NVMM), width=1920, height=1080, format=NV12, framerate=$framerate/1' ! nvv4l2h265enc bitrate=7000000 ! h265parse ! qtmux ! filesink location=$FILE -e"
+			execute_str="sudo gst-launch-1.0 -e $v4l2src_pipeline_str nvvidconv ! 'video/x-raw(memory:NVMM), width=1920, height=1080, format=NV12, framerate=$framerate/1' ! nvv4l2h265enc bitrate=9800000 ! h265parse ! qtmux ! filesink location=$FILE -e"
 			printf "\nDebug: $execute_str\n"
 			cd ~
 			eval $execute_str
