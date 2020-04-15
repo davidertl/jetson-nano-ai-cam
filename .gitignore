@@ -2,3 +2,4 @@
 **/logs
 SELECTCAMERA_PID
 *.mp4
+.vscode

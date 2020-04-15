@@ -387,16 +387,17 @@ show_menu_camera_selection()
 	dialog_menu+=("o")
 	dialog_menu+=("Advanced Options")
 
-	#Looping videos in from the folder test-videos
-	IFS=$'\n\r'
-	readarray -t test_videos < <(find ~/test-videos -name \*.mp4 )
-	for (( i=0; i<${#test_videos[*]}; i++ ));
-	do
-		dialog_menu+=("V${i}")
-		this_video="${test_videos[$i]}"
+#	Doesn't work
+#	#Looping videos in from the folder test-videos
+#	IFS=$'\n\r'
+#	readarray -t test_videos < <(find ~/test-videos -name \*.mp4 )
+#	for (( i=0; i<${#test_videos[*]}; i++ ));
+#	do
+#		dialog_menu+=("V${i}")
+#		this_video="${test_videos[$i]}"#
 
-		dialog_menu+=("${this_video##*/}")
-	done
+#		dialog_menu+=("${this_video##*/}")
+#	done
 
 
 	return_str=$(whiptail --backtitle "Listing all the UVC Cameras" \
