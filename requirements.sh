@@ -89,3 +89,7 @@ sudo -H pip3 install Pillow
 sudo apt-get --with-new-pkgs upgrade
 sudo apt autoremove -y
 sudo apt-get dist-upgrade -y
+
+
+## for https://gitlab.com/StrangeAI/centernet_pro_max
+sudo -H pip3 install tabulate
