@@ -59,7 +59,8 @@ sudo apt-get install -y libhdf5-serial-dev hdf5-tools libhdf5-dev zlib1g-dev zip
 
 sudo apt-get install -y build-essential libatlas-base-dev
 sudo apt-get install -y python3-scipy
-sudo apt-get install -y python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
+sudo apt-get install -y python-numpy python-scipy python-matplotlib
+sudo apt-get install -y ipython ipython-notebook python-pandas python-sympy python-nose
 
 
 sudo apt-get install -y python3-pip
@@ -92,4 +93,14 @@ sudo apt-get dist-upgrade -y
 
 
 ## for https://gitlab.com/StrangeAI/centernet_pro_max
-sudo -H pip3 install tabulate
+sudo -H pip3 install tabulate cloudpickle imagesize portalocker easydict skimage
+
+
+#scikit-image takes long imte
+#for StrangeAI/first_order_transfer
+sudo -H pip3 install scikit-image
+
+sudo -H pip3 install sklearn
+sudo apt install python3-decorator
+
+sudo apt install lexnlp
