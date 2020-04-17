@@ -850,7 +850,9 @@ show_menu_camera_functions_lv1()
 				FILE="/media/5a5cff49-52fe-4e32-b1dc-886e34ce958b/LIVE-Recording-$today.mp4"
 			fi
 			
-			execute_str="sudo gst-launch-1.0 -e $v4l2src_pipeline_str nvvidconv ! 'video/x-raw(memory:NVMM), width=1920, height=1080, format=NV12, framerate=$framerate/1' ! nvv4l2h265enc bitrate=9800000 ! h265parse ! qtmux ! filesink location=$FILE -e"
+			execute_str="sudo gst-launch-1.0 -e $v4l2src_pipeline_str nvvidconv ! 'video/x-raw(memory:NVMM), width=1920, height=1080, format=NV12, framerate=$framerate/1' !  tee name=t  t. ! nvv4l2h265enc bitrate=9800000 ! h265parse ! qtmux ! filesink location=$FILE -e  t. ! nvoverlaysink sync=false async=false -e "
+
+
 			printf "\nDebug: $execute_str\n"
 			cd ~
 			eval $execute_str
