@@ -869,7 +869,7 @@ show_menu_camera_functions_lv1()
 			#logo overlay
 			#v4l2src_pipeline_str+="gdkpixbufoverlay location=~/jetson-nano-ai-cam/carryai-simple-dark.png offset-x=-1 offset-y=1 ! "
 
-			execute_str="gst-launch-1.0 $v4l2src_pipeline_str nvvidconv ${nvvidconv_flip} ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nvoverlaysink sync=false async=false -e"
+			execute_str="gst-launch-1.0 $v4l2src_pipeline_str nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)NV12' ! nvoverlaysink sync=false async=false -e"
 
 
 			printf "\nDebug v4l2src_pipeline: \n$v4l2src_pipeline_str\n"

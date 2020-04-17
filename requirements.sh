@@ -5,7 +5,7 @@ sudo apt-get update
 sudo apt-get upgrade -y
 
 sudo apt-get install -y v4l-utils
-sudo apt-get install -y gawk curl
+sudo apt-get install -y gawk curl xdotool
 
 sudo apt-get install -y python3-pip libhdf5-serial-dev hdf5-tools
 
@@ -77,6 +77,8 @@ sudo -H pip3 install -U pip testresources setuptools
 sudo -H pip3 install -U numpy future mock h5py keras_preprocessing keras_application gast futures protobuf pybind11 grpcio absl-py py-cpuinfo psutil portpicker six mock requests gast h5py astor termcolor protobuf keras-applications keras-preprocessing wrapt google-pasta
 
 
+sudo -H pip3 install keras h5py matplotlib pandas
+
 ##for onnx
 sudo apt-get install protobuf-compiler libprotoc-dev
 sudo -H pip install onnx==1.4.1
@@ -104,3 +106,5 @@ sudo -H pip3 install sklearn
 sudo apt install python3-decorator
 
 sudo apt install lexnlp
+
+
