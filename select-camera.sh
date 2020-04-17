@@ -1451,6 +1451,8 @@ function_selection=1
 #printf "\n"
 
 #--list-ctrls-menus
+#-L to list details
+#eval $(v4l2-ctl --device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} -L
 ##disable auto exposure 1-disable auto exposure, 3-enable auto exposure
 #eval $(v4l2-ctl --device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} -c exposure_auto=3 )
 #eval $(v4l2-ctl --device=${VIDEO_CAMERA_INPUTS[$camera_num,0]} -c gamma=80 )
