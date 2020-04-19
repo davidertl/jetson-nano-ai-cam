@@ -62,7 +62,7 @@ yolo_detection_options[4,2]="~/trained-weight/police2020/yolov3-tiny-512-rotate-
 yolo_detection_options[4,3]="~/trained-weight/police2020/yolov3-tiny-512-rotate-40-more_var.weights"
 yolo_detection_options[4,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
-yolo_detection_options[5,0]="HK Police (http://${myIPAddress}:8090)"
+yolo_detection_options[5,0]="HK Police 512+(http://${myIPAddress}:8090)"
 yolo_detection_options[5,1]="${yolo_detection_options[4,1]}" ##same
 yolo_detection_options[5,2]="${yolo_detection_options[4,2]}" ##same
 yolo_detection_options[5,3]="${yolo_detection_options[4,3]}" ##same
@@ -72,7 +72,7 @@ yolo_detection_options[6,0]="*HK Police 512 (Require GUI X11)"
 yolo_detection_options[6,1]="~/trained-weight/police2020/obj.edge.data"
 yolo_detection_options[6,2]="~/trained-weight/police2020/yolov3-tiny-512.cfg"
 yolo_detection_options[6,3]="~/trained-weight/police2020/yolov3-tiny-512.weights"
-yolo_detection_options[6,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+yolo_detection_options[6,4]="-thresh 0.4 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
 yolo_detection_options[7,0]="80 Different objects (Require GUI X11)"
 yolo_detection_options[7,1]="~/trained-weight/reference/coco.data"
