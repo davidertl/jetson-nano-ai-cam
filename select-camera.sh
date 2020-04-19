@@ -14,7 +14,8 @@
 declare -A VIDEO_CAMERA_INPUTS
 declare -A yolo_detection_options
 
-post_to_server=true;
+#upload_detections=true
+upload_detections=false
 myIPAddress=$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p' | tr '\n' '|' )
 myIPAddress=${myIPAddress::-1}
 echo 255 | sudo tee /sys/devices/pwm-fan/target_pwm
@@ -35,7 +36,7 @@ yolo_detection_options[0,0]="Face Mask (Require GUI X11)"
 yolo_detection_options[0,1]="~/trained-weight/mask2020/obj.edge.data"
 yolo_detection_options[0,2]="~/trained-weight/mask2020/yolov3-tiny-var.cfg"
 yolo_detection_options[0,3]="~/trained-weight/mask2020/yolov3-tiny-var.weights"
-yolo_detection_options[0,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+yolo_detection_options[0,4]="-thresh 0.60 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
 yolo_detection_options[1,0]="Face Mask No display (http://${myIPAddress}:8090)"
 yolo_detection_options[1,1]="${yolo_detection_options[0,1]}" ##same
@@ -47,7 +48,7 @@ yolo_detection_options[2,0]="Face Mask High accuracy (Require GUI X11)"
 yolo_detection_options[2,1]="~/trained-weight/mask2020/obj.edge.data"
 yolo_detection_options[2,2]="~/trained-weight/mask2020/yolov3-tiny-832.cfg"
 yolo_detection_options[2,3]="~/trained-weight/mask2020/yolov3-tiny-832.weights"
-yolo_detection_options[2,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+yolo_detection_options[2,4]="-thresh 0.60 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
 yolo_detection_options[3,0]="Face Mask High accuracy (http://${myIPAddress}:8090)"
 yolo_detection_options[3,1]="${yolo_detection_options[2,1]}" ##same
@@ -59,7 +60,7 @@ yolo_detection_options[4,0]="HK Police 512+(Require GUI X11)"
 yolo_detection_options[4,1]="~/trained-weight/police2020/obj.edge.data"
 yolo_detection_options[4,2]="~/trained-weight/police2020/yolov3-tiny-512-rotate-40.cfg"
 yolo_detection_options[4,3]="~/trained-weight/police2020/yolov3-tiny-512-rotate-40-more_var.weights"
-yolo_detection_options[4,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+yolo_detection_options[4,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
 yolo_detection_options[5,0]="HK Police (http://${myIPAddress}:8090)"
 yolo_detection_options[5,1]="${yolo_detection_options[4,1]}" ##same
@@ -67,25 +68,26 @@ yolo_detection_options[5,2]="${yolo_detection_options[4,2]}" ##same
 yolo_detection_options[5,3]="${yolo_detection_options[4,3]}" ##same
 yolo_detection_options[5,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[4,4]}"
 
+yolo_detection_options[6,0]="*HK Police 512 (Require GUI X11)"
+yolo_detection_options[6,1]="~/trained-weight/police2020/obj.edge.data"
+yolo_detection_options[6,2]="~/trained-weight/police2020/yolov3-tiny-512.cfg"
+yolo_detection_options[6,3]="~/trained-weight/police2020/yolov3-tiny-512.weights"
+yolo_detection_options[6,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
-yolo_detection_options[6,0]="80 Different objects (Require GUI X11)"
-yolo_detection_options[6,1]="~/trained-weight/reference/coco.data"
-yolo_detection_options[6,2]="~/trained-weight/reference/yolov3-tiny.cfg"
-yolo_detection_options[6,3]="~/trained-weight/reference/yolov3-tiny.weights"
-yolo_detection_options[6,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+yolo_detection_options[7,0]="80 Different objects (Require GUI X11)"
+yolo_detection_options[7,1]="~/trained-weight/reference/coco.data"
+yolo_detection_options[7,2]="~/trained-weight/reference/yolov3-tiny.cfg"
+yolo_detection_options[7,3]="~/trained-weight/reference/yolov3-tiny.weights"
+yolo_detection_options[7,4]="-thresh 0.20 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
 
-yolo_detection_options[7,0]="80 Different objects (http://${myIPAddress}:8090)"
-yolo_detection_options[7,1]="${yolo_detection_options[6,1]}" ##same
-yolo_detection_options[7,2]="${yolo_detection_options[6,2]}" ##same
-yolo_detection_options[7,3]="${yolo_detection_options[6,3]}" ##same
-yolo_detection_options[7,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[6,4]}" 
+yolo_detection_options[8,0]="80 Different objects (http://${myIPAddress}:8090)"
+yolo_detection_options[8,1]="${yolo_detection_options[6,1]}" ##same
+yolo_detection_options[8,2]="${yolo_detection_options[6,2]}" ##same
+yolo_detection_options[8,3]="${yolo_detection_options[6,3]}" ##same
+yolo_detection_options[8,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[6,4]}" 
 
-yolo_detection_options[8,0]="HK Police 512 (Require GUI X11)"
-yolo_detection_options[8,1]="~/trained-weight/police2020/obj.edge.data"
-yolo_detection_options[8,2]="~/trained-weight/police2020/yolov3-tiny-512.cfg"
-yolo_detection_options[8,3]="~/trained-weight/police2020/yolov3-tiny-512.weights"
-yolo_detection_options[8,4]="-thresh 0.15 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
-
+#for HEREDOC in bash #https://stackoverflow.com/questions/1167746/how-to-assign-a-heredoc-value-to-a-variable-in-bash
+define(){ IFS='\n' read -r -d '' ${1} || true; }
 
 #pause
 clear
@@ -474,7 +476,7 @@ show_menu_advanced_options()
 										"03" "Toggle Power Mode(Current: ${current_power_mode})" \
 										"04" "Reset Jetson Hotspot" \
 										"05" "Reset Mobile Network" \
-										"06" "Toggle Post to server(Current: ${post_to_server})" \
+										"06" "Toggle Post to server(Current: ${upload_detections})" \
 										"07" "Network Configurator" \
 										"08" "Reset onboard camera with nvargus-daemon" \
 										"09" "Reset ngrok" \
@@ -593,12 +595,12 @@ show_menu_advanced_options()
 
 		06)
 			clear
-			if [[ $post_to_server == true ]]; then
-				post_to_server=false
+			if [[ $upload_detections == true ]]; then
+				upload_detections=false
 				printf "Will not send to server\n";
 				#sudo python3 ~/jetson-nano-ai-cam/show.py "Will Not send to server"
 			else
-				post_to_server=true
+				upload_detections=true
 				printf "Will send to server\n";
 				#sudo python3 ~/jetson-nano-ai-cam/show.py "Will send to server"
 			fi
@@ -850,7 +852,9 @@ show_menu_camera_functions_lv1()
 				FILE="/media/5a5cff49-52fe-4e32-b1dc-886e34ce958b/LIVE-Recording-$today.mp4"
 			fi
 			
-			execute_str="sudo gst-launch-1.0 -e $v4l2src_pipeline_str nvvidconv ! 'video/x-raw(memory:NVMM), width=1920, height=1080, format=NV12, framerate=$framerate/1' !  tee name=t  t. ! nvv4l2h265enc bitrate=9800000 ! h265parse ! qtmux ! filesink location=$FILE -e  t. ! nvoverlaysink sync=false async=false -e "
+			#execute_str="sudo gst-launch-1.0 -e $v4l2src_pipeline_str nvvidconv ! 'video/x-raw(memory:NVMM), width=1920, height=1080, format=NV12, framerate=$framerate/1' !  tee name=t  t. ! nvv4l2h265enc bitrate=9800000 ! h265parse ! qtmux ! filesink location=$FILE -e  t. ! nvoverlaysink sync=false async=false -e "
+
+			execute_str="sudo gst-launch-1.0 -e $v4l2src_pipeline_str nvvidconv ! 'video/x-raw(memory:NVMM), format=NV12, framerate=$framerate/1' !  tee name=t  t. ! nvv4l2h265enc bitrate=9800000 ! h265parse ! qtmux ! filesink location=$FILE -e  t. ! nvoverlaysink sync=false async=false -e "
 
 
 			printf "\nDebug: $execute_str\n"
@@ -967,16 +971,28 @@ show_menu_yolov3_detection_options()
 
 
 
-execute_str=$(cat <<EOF
- $yolo_exec_str \
-  ${yolo_detection_options[$function_selection,1]} \
-  ${yolo_detection_options[$function_selection,2]} \
-  ${yolo_detection_options[$function_selection,3]} \
-  ${yolo_detection_options[$function_selection,4]} \
-  '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str' \
-  | gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} '
-EOF
-)
+	execute_str=$(cat <<-EOF
+		$yolo_exec_str \
+		${yolo_detection_options[$function_selection,1]} \
+		${yolo_detection_options[$function_selection,2]} \
+		${yolo_detection_options[$function_selection,3]} \
+		${yolo_detection_options[$function_selection,4]} \
+		'$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'  
+	EOF
+	)
+
+	if [[ $upload_detections == true ]]; then
+		upload_detection_str=$(cat <<-EOF
+  			| gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} '
+		EOF
+		)
+	else
+		upload_detection_str=""
+	fi
+
+	execute_str+="$upload_detection_str"
+
+
 	#1>&2
 	#&>/dev/null &
 

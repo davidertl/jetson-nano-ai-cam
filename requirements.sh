@@ -100,6 +100,7 @@ sudo -H pip3 install tabulate cloudpickle imagesize portalocker easydict skimage
 
 #scikit-image takes long imte
 #for StrangeAI/first_order_transfer
+sudo -H pip3 install imageio
 sudo -H pip3 install scikit-image
 
 sudo -H pip3 install sklearn
