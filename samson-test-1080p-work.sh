@@ -37,3 +37,5 @@ gst-launch-1.0 -v videotestsrc ! nvvidconv ! nvv4l2h264enc ! h264parse ! flvmux 
 #gst-launch-1.0 -v videotestsrc ! nvvidconv ! nvv4l2h264enc ! h264parse ! flvmux  ! rtmpsink location='rtmp://192.168.1.10/live/demo2' -e
 
 #gst-launch-1.0 -v v4l2src io-mode=2 device='/dev/video0' ! 'video/x-raw, format=(string)YUY2, width=(int)1920, height=(int)1080, framerate=(fraction)60/1' !  nvvidconv ! nvv4l2h264enc ! h264parse ! flvmux ! rtmpsink location='rtmp://192.168.1.10/live/demo2' -e
+
+gst-launch-1.0 ximagesrc use-damage=0 remote=1 ! videoconvert ! omxh264enc control-rate=2 bitrate=4000000 ! video/x-h264, stream-format=byte-stream ! rtph264pay mtu=1400 ! udpsink host=192.168.1.10 port=5000 sync=false async=false
