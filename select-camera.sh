@@ -335,7 +335,7 @@ if [ "$1" == "start" ]; then
 	exit 0
 fi
 
-if [ "$1" == "--test-video" ]; then
+if [ "$1" == "--video-path" ]; then
 	if [[ -d "$2" ]]; then
 		test_videos_dir=$2
 	else
