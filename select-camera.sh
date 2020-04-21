@@ -26,6 +26,8 @@ nvvidconv_flip=""
 resize_to_resolution="N/A"
 video_file_for_v4l2src_pipeline=""
 
+test_videos_dir="/home/jetsonnano/test-videos"
+
 #map it to HDMI output
 export DISPLAY=:0
 
@@ -36,61 +38,61 @@ yolo_detection_options[0,0]="Face Mask (Require GUI X11)"
 yolo_detection_options[0,1]="~/trained-weight/mask2020/obj.edge.data"
 yolo_detection_options[0,2]="~/trained-weight/mask2020/yolov3-tiny-var.cfg"
 yolo_detection_options[0,3]="~/trained-weight/mask2020/yolov3-tiny-var.weights"
-yolo_detection_options[0,4]="-thresh 0.70 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+yolo_detection_options[0,4]="-thresh 0.70 -mjpeg_port 8090 -json_port 8070 "
 
 yolo_detection_options[1,0]="Face Mask No display (http://${myIPAddress}:8090)"
 yolo_detection_options[1,1]="${yolo_detection_options[0,1]}" ##same
 yolo_detection_options[1,2]="${yolo_detection_options[0,2]}" ##same
 yolo_detection_options[1,3]="${yolo_detection_options[0,3]}" ##same
-yolo_detection_options[1,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[0,4]}"
+yolo_detection_options[1,4]="-dont_show ${yolo_detection_options[0,4]} "
 
 yolo_detection_options[2,0]="Face Mask High accuracy (Require GUI X11)"
 yolo_detection_options[2,1]="~/trained-weight/mask2020/obj.edge.data"
 yolo_detection_options[2,2]="~/trained-weight/mask2020/yolov3-tiny-832.cfg"
 yolo_detection_options[2,3]="~/trained-weight/mask2020/yolov3-tiny-832.weights"
-yolo_detection_options[2,4]="-thresh 0.70 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+yolo_detection_options[2,4]="-thresh 0.70 -mjpeg_port 8090 -json_port 8070 "
 
 yolo_detection_options[3,0]="Face Mask High accuracy (http://${myIPAddress}:8090)"
 yolo_detection_options[3,1]="${yolo_detection_options[2,1]}" ##same
 yolo_detection_options[3,2]="${yolo_detection_options[2,2]}" ##same
 yolo_detection_options[3,3]="${yolo_detection_options[2,3]}" ##same
-yolo_detection_options[3,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[2,4]}" 
+yolo_detection_options[3,4]="-dont_show ${yolo_detection_options[2,4]} "
 
 yolo_detection_options[4,0]="HK Police 512+(Require GUI X11)"
 yolo_detection_options[4,1]="~/trained-weight/police2020/obj.edge.data"
 yolo_detection_options[4,2]="~/trained-weight/police2020/yolov3-tiny-512-rotate-40.cfg"
 yolo_detection_options[4,3]="~/trained-weight/police2020/yolov3-tiny-512-rotate-40-more_var.weights"
-yolo_detection_options[4,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+yolo_detection_options[4,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 "
 
 yolo_detection_options[5,0]="HK Police 512+(http://${myIPAddress}:8090)"
 yolo_detection_options[5,1]="${yolo_detection_options[4,1]}" ##same
 yolo_detection_options[5,2]="${yolo_detection_options[4,2]}" ##same
 yolo_detection_options[5,3]="${yolo_detection_options[4,3]}" ##same
-yolo_detection_options[5,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[4,4]}"
+yolo_detection_options[5,4]="-dont_show ${yolo_detection_options[4,4]} "
 
 yolo_detection_options[6,0]="*HK Police 512 (Require GUI X11)"
 yolo_detection_options[6,1]="~/trained-weight/police2020/obj.edge.data"
 yolo_detection_options[6,2]="~/trained-weight/police2020/yolov3-tiny-512.cfg"
 yolo_detection_options[6,3]="~/trained-weight/police2020/yolov3-tiny-512.weights"
-yolo_detection_options[6,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+yolo_detection_options[6,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 "
 
 yolo_detection_options[7,0]="80 Different objects (Require GUI X11)"
 yolo_detection_options[7,1]="~/trained-weight/reference/coco.data"
 yolo_detection_options[7,2]="~/trained-weight/reference/yolov3-tiny.cfg"
 yolo_detection_options[7,3]="~/trained-weight/reference/yolov3-tiny.weights"
-yolo_detection_options[7,4]="-thresh 0.40 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+yolo_detection_options[7,4]="-thresh 0.40 -mjpeg_port 8090 -json_port 8070 "
 
 yolo_detection_options[8,0]="80 Different objects (http://${myIPAddress}:8090)"
 yolo_detection_options[8,1]="${yolo_detection_options[6,1]}" ##same
 yolo_detection_options[8,2]="${yolo_detection_options[6,2]}" ##same
 yolo_detection_options[8,3]="${yolo_detection_options[6,3]}" ##same
-yolo_detection_options[8,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[6,4]}" 
+yolo_detection_options[8,4]="-dont_show ${yolo_detection_options[6,4]} "
 
 yolo_detection_options[9,0]="*HK Police 512 no angle (Require GUI X11)"
 yolo_detection_options[9,1]="~/trained-weight/police2020/obj.edge.data"
 yolo_detection_options[9,2]="~/trained-weight/police2020/yolov3-tiny.cfg"
 yolo_detection_options[9,3]="~/trained-weight/police2020/yolov3-tiny.weights.ok"
-yolo_detection_options[9,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+yolo_detection_options[9,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 "
 
 
 
@@ -333,7 +335,14 @@ if [ "$1" == "start" ]; then
 	exit 0
 fi
 
-
+if [ "$1" == "--test-video" ]; then
+	if [[ -d "$2" ]]; then
+		test_videos_dir=$2
+	else
+		echo "Directory: $2 is not valid"
+		exit 0
+	fi
+fi
 
 
 ###################
@@ -398,9 +407,9 @@ show_menu_camera_selection()
 	dialog_menu+=("Advanced Options")
 
 	
-	#Looping videos in from the folder test-videos
+	#Looping videos in from the folder $test_videos_dir
 	IFS=$'\n\r'
-	readarray -t test_videos < <(find ~/test-videos -name \*.mp4 )
+	readarray -t test_videos < <(find "$test_videos_dir" -name "*.mp4" ! -path "*/archive/*" )
 	for (( i=0; i<${#test_videos[*]}; i++ ));
 	do
 		dialog_menu+=("V${i}")
@@ -417,9 +426,11 @@ show_menu_camera_selection()
 	#pause
 	camera_num=$(echo $return_str | rev | cut -b -1 )
 
-	if [ $(echo $return_str | head -c 1)  == "V" ]; then
-		test_video_index=${return_str:1}
-		video_file_for_v4l2src_pipeline="${test_videos[$test_video_index]}"
+	if [ "$return_str" != "" ]; then
+		if [ $(echo $return_str | head -c 1)  == "V" ]; then
+			test_video_index=${return_str:1}
+			video_file_for_v4l2src_pipeline="${test_videos[$test_video_index]}"
+		fi
 	fi
 		
 	build_pipeline
@@ -928,7 +939,9 @@ show_menu_yolov3_detection_options()
 {
 
 	##remove older files than 2 days
-	sudo find /home/jetsonnano/images -name "*.jpg" -type f -mtime +2 -exec rm -f {} \;
+	if [[ -d "/home/jetsonnano/images" ]]; then
+		sudo find /home/jetsonnano/images -name "*.jpg" -type f -mtime +2 -exec rm -f {} \;
+	fi
 
 
 	back_title="Chosen Camera: ${VIDEO_CAMERA_INPUTS[$camera_num,1]} ${VIDEO_CAMERA_INPUTS[$camera_num,0]} ${VIDEO_CAMERA_INPUTS[$camera_num,5]}x${VIDEO_CAMERA_INPUTS[$camera_num,6]}@${VIDEO_CAMERA_INPUTS[$camera_num,7]}fps"
@@ -985,10 +998,12 @@ show_menu_yolov3_detection_options()
 
 	if [[ $upload_detections == true ]]; then
 		upload_detection_str=$(cat <<-EOF
-  			| gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} '
+  			-prefix ~/images/d${today} | gawk -F: '/JETSON_NANO_DETECTION:[.]*/ { gsub(/,\s\W/, ":"); gsub(/,\s/, ","); system("~/jetson-nano-ai-cam/send_http.sh " "\"" \$2 "\" " \$3)} '
 		EOF
 		)
 	else
+		##remove the prefix arg
+		#execute_str=${execute_str//-prefix/_prefix}
 		upload_detection_str=""
 	fi
 
@@ -1076,10 +1091,10 @@ build_pipeline()
 
 			case $resize_to_resolution in
 				"1280x720")
-					v4l2src_pipeline_str+="videoscale method=1 sharpen=1 ! video/x-raw, width=1280, height=720 ! "
+					v4l2src_pipeline_str+="videoscale method=bilinear sharpen=1 sharpness=2 ! video/x-raw, width=1280, height=720 ! "
 				;;
 				"640x360")
-					v4l2src_pipeline_str+="videoscale method=1 sharpen=1 ! video/x-raw, width=640, height=360 ! "
+					v4l2src_pipeline_str+="videoscale method=bilinear sharpen=1 sharpness=2 ! video/x-raw, width=640, height=360 ! "
 				;;
 			esac
 
@@ -1155,17 +1170,31 @@ build_pipeline()
 	if [ "$video_file_for_v4l2src_pipeline" != "" ]; then
 
 	 	#first, get the codec used, is that hevc or h264 for now
-		codec_used=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 $video_file_for_v4l2src_pipeline)
+		codec_used=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$video_file_for_v4l2src_pipeline")
 		case $codec_used in
 			"hevc")
-				v4l2src_pipeline_str="filesrc location=$video_file_for_v4l2src_pipeline ! qtdemux name=demux demux.video_0 ! queue ! h265parse ! nvv4l2decoder enable-max-performance=1 ! nvvidconv ! video/x-raw, format=BGRx ! queue ! "
+				v4l2src_pipeline_str="filesrc location=\"$video_file_for_v4l2src_pipeline\" ! qtdemux name=demux demux.video_0 ! queue ! h265parse ! nvv4l2decoder enable-max-performance=1 ! nvvidconv ! video/x-raw, format=BGRx ! queue ! "
 			;;
 			"h264")
-				v4l2src_pipeline_str="filesrc location=$video_file_for_v4l2src_pipeline ! qtdemux ! queue ! h264parse ! omxh264dec ! nvvidconv ! video/x-raw, format=BGRx ! queue ! "
+				v4l2src_pipeline_str="filesrc location=\"$video_file_for_v4l2src_pipeline\" ! qtdemux ! queue ! h264parse ! omxh264dec ! nvvidconv ! video/x-raw, format=BGRx ! queue ! "
 			;;
 		esac
 
-		printf "\nDebug: Loading File: $video_file_for_v4l2src_pipeline:$codec_used\n$v4l2src_pipeline_str\n"
+		case $resize_to_resolution in
+			"1280x720")
+				v4l2src_pipeline_str+="videoscale method=bilinear sharpen=1 sharpness=2 ! video/x-raw, width=1280, height=720 ! "
+			;;
+			"640x360")
+				v4l2src_pipeline_str+="videoscale method=bilinear sharpen=1 sharpness=2 ! video/x-raw, width=640, height=360 ! "
+			;;
+		esac
+
+		if [[ $nvvidconv_flip == "flip-method=2 " ]]; then
+			v4l2src_pipeline_str+="nvvidconv flip-method=2 ! "
+			#v4l2src_pipeline_str+="videoflip video-direction=2 ! "
+		fi		
+
+		printf "\nDebug: Loading File: \"$video_file_for_v4l2src_pipeline\":$codec_used\n$v4l2src_pipeline_str\n"
 
 	fi
 
@@ -1175,7 +1204,12 @@ build_pipeline()
 
 	v4l2src_ending_pipeline_str+="videoconvert ! queue ! video/x-raw, format=BGR ! "
 	##v4l2src_ending_pipeline_str+="appsink sync=false async=false "
-	v4l2src_ending_pipeline_str+="appsink sync=false async=true "
+
+	if [ "$video_file_for_v4l2src_pipeline" != "" ]; then
+		v4l2src_ending_pipeline_str+="appsink sync=true "
+	else
+		v4l2src_ending_pipeline_str+="appsink sync=false async=true "
+	fi
 
 	#v4l2src_pipeline_str+=" tee name=t t. ! nvvidconv ! omxh264enc control-rate=2  bitrate=6000000 peak-bitrate=6500000  preset-level=2 profile=8 !  'video/x-h264, stream-format=(string)byte-stream, level=(string)5.2' ! h264parse ! qtmux ! filesink location=/mnt/sandisk/$today.mov t. ! "
 	
