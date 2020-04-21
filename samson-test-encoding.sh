@@ -66,3 +66,6 @@ gst-launch-1.0 rtpbin name=rtpbin ximagesrc use-damage=0 remote=1 ! videoconvert
 #m=video 5000 RTP/AVP 96 #
 #a=rtpmap:96 H264/90000
 #
+
+
+nano_cam_test.py --video 'v4l2src io-mode=2 device=/dev/video0 do-timestamp=true ! video/x-raw, format=YUY2, width=1920, height=1080, framerate=60/1 !  videoconvert ! video/x-raw, format=BGR ! appsink sync=false async=true '

@@ -86,6 +86,13 @@ yolo_detection_options[8,2]="${yolo_detection_options[6,2]}" ##same
 yolo_detection_options[8,3]="${yolo_detection_options[6,3]}" ##same
 yolo_detection_options[8,4]="-dont_show -prefix ~/images/d${today} ${yolo_detection_options[6,4]}" 
 
+yolo_detection_options[9,0]="*HK Police 512 no angle (Require GUI X11)"
+yolo_detection_options[9,1]="~/trained-weight/police2020/obj.edge.data"
+yolo_detection_options[9,2]="~/trained-weight/police2020/yolov3-tiny.cfg"
+yolo_detection_options[9,3]="~/trained-weight/police2020/yolov3-tiny.weights.ok"
+yolo_detection_options[9,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 -prefix ~/images/d${today}"
+
+
 
 #pause
 clear
@@ -390,18 +397,16 @@ show_menu_camera_selection()
 	dialog_menu+=("o")
 	dialog_menu+=("Advanced Options")
 
-#	Doesn't work
-#	#Looping videos in from the folder test-videos
-#	IFS=$'\n\r'
-#	readarray -t test_videos < <(find ~/test-videos -name \*.mp4 )
-#	for (( i=0; i<${#test_videos[*]}; i++ ));
-#	do
-#		dialog_menu+=("V${i}")
-#		this_video="${test_videos[$i]}"#
-
-#		dialog_menu+=("${this_video##*/}")
-#	done
-
+	
+	#Looping videos in from the folder test-videos
+	IFS=$'\n\r'
+	readarray -t test_videos < <(find ~/test-videos -name \*.mp4 )
+	for (( i=0; i<${#test_videos[*]}; i++ ));
+	do
+		dialog_menu+=("V${i}")
+		this_video="${test_videos[$i]}"
+		dialog_menu+=("${this_video##*/}")
+	done
 
 	return_str=$(whiptail --backtitle "Listing all the UVC Cameras" \
 										--title "Select the video device" \
@@ -412,11 +417,10 @@ show_menu_camera_selection()
 	#pause
 	camera_num=$(echo $return_str | rev | cut -b -1 )
 
-	##Doesn't work now	
-#	if [ $(echo $return_str | head -c 1)  == "V" ]; then
-#		test_video_index=${return_str:1}
-#		video_file_for_v4l2src_pipeline="${test_videos[$test_video_index]}"
-#	fi
+	if [ $(echo $return_str | head -c 1)  == "V" ]; then
+		test_video_index=${return_str:1}
+		video_file_for_v4l2src_pipeline="${test_videos[$test_video_index]}"
+	fi
 		
 	build_pipeline
 
@@ -1146,25 +1150,38 @@ build_pipeline()
 	esac
 
 
+	#if there is video_file_for_v4l2src_pipeline, then just use the video
+	#useless right now, to be developed
+	if [ "$video_file_for_v4l2src_pipeline" != "" ]; then
+
+	 	#first, get the codec used, is that hevc or h264 for now
+		codec_used=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 $video_file_for_v4l2src_pipeline)
+		case $codec_used in
+			"hevc")
+				v4l2src_pipeline_str="filesrc location=$video_file_for_v4l2src_pipeline ! qtdemux name=demux demux.video_0 ! queue ! h265parse ! nvv4l2decoder enable-max-performance=1 ! nvvidconv ! video/x-raw, format=BGRx ! queue ! "
+			;;
+			"h264")
+				v4l2src_pipeline_str="filesrc location=$video_file_for_v4l2src_pipeline ! qtdemux ! queue ! h264parse ! omxh264dec ! nvvidconv ! video/x-raw, format=BGRx ! queue ! "
+			;;
+		esac
+
+		printf "\nDebug: Loading File: $video_file_for_v4l2src_pipeline:$codec_used\n$v4l2src_pipeline_str\n"
+
+	fi
+
+
 	#tee name=t   t. ! identity drop-allocation=1 ! v4l2sink device=/dev/video9 
 	# t. ! v4l2sink device=/dev/video9
 
-	v4l2src_ending_pipeline_str+="videoconvert ! video/x-raw, format=BGR ! "
+	v4l2src_ending_pipeline_str+="videoconvert ! queue ! video/x-raw, format=BGR ! "
 	##v4l2src_ending_pipeline_str+="appsink sync=false async=false "
 	v4l2src_ending_pipeline_str+="appsink sync=false async=true "
 
 	#v4l2src_pipeline_str+=" tee name=t t. ! nvvidconv ! omxh264enc control-rate=2  bitrate=6000000 peak-bitrate=6500000  preset-level=2 profile=8 !  'video/x-h264, stream-format=(string)byte-stream, level=(string)5.2' ! h264parse ! qtmux ! filesink location=/mnt/sandisk/$today.mov t. ! "
 	
 
-	#printf "$v4l2src_pipeline_str\n\n";
-
-	
-	##if there is video_file_for_v4l2src_pipeline, then just use the video
-	##useless right now, to be developed
-	# [ "$video_file_for_v4l2src_pipeline" != "" ]; then
-	#	v4l2src_pipeline_str="$video_file_for_v4l2src_pipeline"
-	#	v4l2src_ending_pipeline_str=""
-	#
+	#printf "Debug:\n$v4l2src_pipeline_str\n\n";
+	#pause
 
 }
 
