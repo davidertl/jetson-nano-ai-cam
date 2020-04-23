@@ -35,9 +35,9 @@ export DISPLAY=:0
 today=`date +%Y%m%d-%H%M%S`
 
 yolo_detection_options[0,0]="Face Mask (Require GUI X11)"
-yolo_detection_options[0,1]="~/trained-weight/mask2020/obj.edge.data"
-yolo_detection_options[0,2]="~/trained-weight/mask2020/yolov3-tiny-var.cfg"
-yolo_detection_options[0,3]="~/trained-weight/mask2020/yolov3-tiny-var.weights"
+yolo_detection_options[0,1]="~/trained-weights/mask2020/obj.edge.data"
+yolo_detection_options[0,2]="~/trained-weights/mask2020/yolov3-tiny-var.cfg"
+yolo_detection_options[0,3]="~/trained-weights/mask2020/yolov3-tiny-var.weights"
 yolo_detection_options[0,4]="-thresh 0.70 -mjpeg_port 8090 -json_port 8070 "
 
 yolo_detection_options[1,0]="Face Mask No display (http://${myIPAddress}:8090)"
@@ -47,9 +47,9 @@ yolo_detection_options[1,3]="${yolo_detection_options[0,3]}" ##same
 yolo_detection_options[1,4]="-dont_show ${yolo_detection_options[0,4]} "
 
 yolo_detection_options[2,0]="Face Mask High accuracy (Require GUI X11)"
-yolo_detection_options[2,1]="~/trained-weight/mask2020/obj.edge.data"
-yolo_detection_options[2,2]="~/trained-weight/mask2020/yolov3-tiny-832.cfg"
-yolo_detection_options[2,3]="~/trained-weight/mask2020/yolov3-tiny-832.weights"
+yolo_detection_options[2,1]="~/trained-weights/mask2020/obj.edge.data"
+yolo_detection_options[2,2]="~/trained-weights/mask2020/yolov3-tiny-832.cfg"
+yolo_detection_options[2,3]="~/trained-weights/mask2020/yolov3-tiny-832.weights"
 yolo_detection_options[2,4]="-thresh 0.70 -mjpeg_port 8090 -json_port 8070 "
 
 yolo_detection_options[3,0]="Face Mask High accuracy (http://${myIPAddress}:8090)"
@@ -59,9 +59,9 @@ yolo_detection_options[3,3]="${yolo_detection_options[2,3]}" ##same
 yolo_detection_options[3,4]="-dont_show ${yolo_detection_options[2,4]} "
 
 yolo_detection_options[4,0]="++Best HK Police 512+(Require GUI X11)"
-yolo_detection_options[4,1]="~/trained-weight/police2020/obj.edge.data"
-yolo_detection_options[4,2]="~/trained-weight/police2020/yolov3-tiny-512-rotate-40.cfg"
-yolo_detection_options[4,3]="~/trained-weight/police2020/yolov3-tiny-512-rotate-40-more_var.weights"
+yolo_detection_options[4,1]="~/trained-weights/police2020/obj.edge.data"
+yolo_detection_options[4,2]="~/trained-weights/police2020/yolov3-tiny-512-rotate-40.cfg"
+yolo_detection_options[4,3]="~/trained-weights/police2020/yolov3-tiny-512-rotate-40-more_var.weights"
 yolo_detection_options[4,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 "
 
 yolo_detection_options[5,0]="HK Police 512+(http://${myIPAddress}:8090)"
@@ -71,15 +71,15 @@ yolo_detection_options[5,3]="${yolo_detection_options[4,3]}" ##same
 yolo_detection_options[5,4]="-dont_show ${yolo_detection_options[4,4]} "
 
 yolo_detection_options[6,0]="HK Police 512 (Require GUI X11)"
-yolo_detection_options[6,1]="~/trained-weight/police2020/obj.edge.data"
-yolo_detection_options[6,2]="~/trained-weight/police2020/yolov3-tiny-512.cfg"
-yolo_detection_options[6,3]="~/trained-weight/police2020/yolov3-tiny-512.weights"
+yolo_detection_options[6,1]="~/trained-weights/police2020/obj.edge.data"
+yolo_detection_options[6,2]="~/trained-weights/police2020/yolov3-tiny-512.cfg"
+yolo_detection_options[6,3]="~/trained-weights/police2020/yolov3-tiny-512.weights"
 yolo_detection_options[6,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 "
 
 yolo_detection_options[7,0]="80 Different objects (Require GUI X11)"
-yolo_detection_options[7,1]="~/trained-weight/reference/coco.data"
-yolo_detection_options[7,2]="~/trained-weight/reference/yolov3-tiny.cfg"
-yolo_detection_options[7,3]="~/trained-weight/reference/yolov3-tiny.weights"
+yolo_detection_options[7,1]="~/trained-weights/reference/coco.data"
+yolo_detection_options[7,2]="~/trained-weights/reference/yolov3-tiny.cfg"
+yolo_detection_options[7,3]="~/trained-weights/reference/yolov3-tiny.weights"
 yolo_detection_options[7,4]="-thresh 0.40 -mjpeg_port 8090 -json_port 8070 "
 
 yolo_detection_options[8,0]="80 Different objects (http://${myIPAddress}:8090)"
@@ -89,9 +89,9 @@ yolo_detection_options[8,3]="${yolo_detection_options[6,3]}" ##same
 yolo_detection_options[8,4]="-dont_show ${yolo_detection_options[6,4]} "
 
 yolo_detection_options[9,0]="*HK Police 512 no angle (Require GUI X11)"
-yolo_detection_options[9,1]="~/trained-weight/police2020/obj.edge.data"
-yolo_detection_options[9,2]="~/trained-weight/police2020/yolov3-tiny.cfg"
-yolo_detection_options[9,3]="~/trained-weight/police2020/yolov3-tiny.weights.ok"
+yolo_detection_options[9,1]="~/trained-weights/police2020/obj.edge.data"
+yolo_detection_options[9,2]="~/trained-weights/police2020/yolov3-tiny.cfg"
+yolo_detection_options[9,3]="~/trained-weights/police2020/yolov3-tiny.weights.ok"
 yolo_detection_options[9,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 "
 
 
@@ -746,6 +746,7 @@ show_menu_camera_functions_lv1()
 										"00" "Python Cam test CV2 ('F' fullscreen, esc quit)" \
 										"01" "Yolo V3 Detection Selection" \
 										"02" "retinaface_pt - trt_cc show faces (fullscreen)" \
+										"02a" "tensorrt_retinaface - TensorRT show faces (fullscreen)" \
 										"03" "Face identification - mtcnn_facenet" \
 										"04" "MTCNN_FaceDectection_TensorRT (doesn't work)" \
 										"05" "jkjung-avt MTCNN TensorRT ('F' fullscreen, esc quit)" \
@@ -780,7 +781,6 @@ show_menu_camera_functions_lv1()
 			clear
 			echo "Yolo V3 Inference"
 			show_menu_yolov3_detection_options
-
 		;;
 
 		02)
@@ -790,8 +790,15 @@ show_menu_camera_functions_lv1()
 			printf "\nDebug: $execute_str\n"
 			cd ~/StrangeAI/retinaface_pt/trt_cc/retinaface/build/
 			eval $execute_str
+		;;
 
-
+		02a)
+			clear
+			echo "Tensorrt_retinaface"			
+			execute_str="./build/examples/trt_engine_retinaface models/retinaface.jetsonnano.trt '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
+			printf "\nDebug: $execute_str\n"
+			cd ~/StrangeAI/tensorrt_retinaface
+			eval $execute_str
 		;;
 
 		03)
