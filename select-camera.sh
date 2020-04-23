@@ -745,10 +745,9 @@ show_menu_camera_functions_lv1()
 										--menu "Select the below functions" 25 78 14 \
 										"00" "Python Cam test CV2 ('F' fullscreen, esc quit)" \
 										"01" "Yolo V3 Detection Selection" \
-										"02" "retinaface_pt - trt_cc show faces (fullscreen)" \
-										"02a" "tensorrt_retinaface - TensorRT show faces (fullscreen)" \
-										"03" "Face identification - mtcnn_facenet" \
-										"04" "MTCNN_FaceDectection_TensorRT (doesn't work)" \
+										"02" "retinaface_pt - trt_cc show faces (fullscreen) Not too accurate" \
+										"03" "tensorrt_retinaface - TensorRT show faces (fullscreen)" \
+										"04" "Face identification - mtcnn_facenet" \
 										"05" "jkjung-avt MTCNN TensorRT ('F' fullscreen, esc quit)" \
 										"06" "tf-pose-estimation (a few mins to build engine)" \
 										"07" "trt-pose densenet(a mins to load model)" \
@@ -792,16 +791,16 @@ show_menu_camera_functions_lv1()
 			eval $execute_str
 		;;
 
-		02a)
+		03)
 			clear
 			echo "Tensorrt_retinaface"			
-			execute_str="./build/examples/trt_engine_retinaface models/retinaface.jetsonnano.trt '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
+			execute_str="./build/examples/trt_engine_retinaface models/retinaface2.trt '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
 			printf "\nDebug: $execute_str\n"
 			cd ~/StrangeAI/tensorrt_retinaface
 			eval $execute_str
 		;;
 
-		03)
+		04)
 			clear
 			echo "mtcnn_facenet, must only do 1920x1080 or need to redo all the engine, https://github.com/samsonadmin/mtcnn_facenet_cpp_tensorRT"
 			echo "Put images of people in the imgs folder. Please only use images that contain one face."
@@ -815,19 +814,11 @@ show_menu_camera_functions_lv1()
 			eval $execute_str
 		;;
 
-		04)
-			clear
-			echo "MTCNN_FaceDectection_TensorRT (doesn't work, nothing is shown on screen)"
-			execute_str="./build/main '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
-			printf "\nDebug: $execute_str\n"
-			cd ~/MTCNN_FaceDetection_TensorRT
-			eval $execute_str
-		;;
 
 		05)
 			clear
 			echo "jkjung-avt MTCNN TensorRT"
-			execute_str="python3 trt_mtcnn.py --v4l2 '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
+			execute_str="python3 trt_mtcnn.py --file --filename '$v4l2src_pipeline_str $v4l2src_ending_pipeline_str'"
 			printf "\nDebug: $execute_str\n"
 			cd ~/jkjung-avt/tensorrt_demos
 			eval $execute_str
