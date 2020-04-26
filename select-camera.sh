@@ -1113,7 +1113,7 @@ build_pipeline()
 		"MJPG")
 
 			#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw,format=I420 !"
-			v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! "
+			v4l2src_pipeline_str+="jpegparse ! jpegdec ! "
 
 			case $resize_to_resolution in
 				"1280x720")
