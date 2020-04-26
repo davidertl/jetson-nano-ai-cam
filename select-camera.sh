@@ -94,6 +94,12 @@ yolo_detection_options[9,2]="~/trained-weights/police2020/yolov3-tiny.cfg"
 yolo_detection_options[9,3]="~/trained-weights/police2020/yolov3-tiny.weights.ok"
 yolo_detection_options[9,4]="-thresh 0.3 -mjpeg_port 8090 -json_port 8070 "
 
+yolo_detection_options[10,0]="Yolov4 80 Different objects (http://${myIPAddress}:8090)"
+yolo_detection_options[10,1]="~/trained-weights/reference/coco.data"
+yolo_detection_options[10,2]="~/trained-weights/reference/yolov4.cfg"
+yolo_detection_options[10,3]="~/trained-weights/reference/yolov4.weights"
+yolo_detection_options[10,4]="-thresh 0.40 -mjpeg_port 8090 -json_port 8070 "
+
 
 
 #pause
@@ -1107,7 +1113,7 @@ build_pipeline()
 		"MJPG")
 
 			#v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! video/x-raw,format=I420 !"
-			v4l2src_pipeline_str+="jpegparse ! jpegdec ! "
+			v4l2src_pipeline_str+="jpegparse ! nvjpegdec ! "
 
 			case $resize_to_resolution in
 				"1280x720")
